@@ -330,10 +330,13 @@ class VerifyEmailView(generics.GenericAPIView):
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 class UpdateRoleView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
     def patch(self, request, format=None):
         role = request.data.get('role', None)
         user_id = request.data.get('id', None)
-        print(role, user_id)
+        
         if not role or not user_id:
             response_data = {
                 "status": "error", 
@@ -342,6 +345,16 @@ class UpdateRoleView(APIView):
                 "errors": ["Both role and user_id must be provided"]
             }
             return Response(response_data, status = status.HTTP_400_BAD_REQUEST)
+        
+        user = request.user
+        if user.role != 'admin':
+            response_data = {
+                "status": "error",
+                "code": status.HTTP_403_FORBIDDEN,
+                "message": "Forbidden",
+                "errors": ["You do not have permission to update user roles"]
+            }
+            return Response(response_data, status=status.HTTP_403_FORBIDDEN)
         
         try:
             user = User.objects.get(id=user_id)
