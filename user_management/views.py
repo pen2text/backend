@@ -35,7 +35,7 @@ class UserRegistrationView(generics.CreateAPIView):
             jwt_token = generate_jwt_token(payload)
 
             # Retrieve content, subject, and receiver_email
-            verification_url = f'http://localhost:8000/api/users/verify-email/{jwt_token}/'
+            verification_url = f'http://localhost:8000/api/users/verify-email/{jwt_token}'
             content = "Content for email verification. " + verification_url 
             subject = "Email Verification"
             receiver_email = user.email
