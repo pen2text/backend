@@ -35,7 +35,7 @@ class ForgotPasswordView(APIView):
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            self.queryset.get(email = user_email)
+            user = self.queryset.get(email = user_email)
         except User.DoesNotExist:
             response_data = {
                 "status": "error",
@@ -47,7 +47,9 @@ class ForgotPasswordView(APIView):
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         
         payload = {
-            'email': user_email,
+            'email': user.email,
+            'id': user.id,
+            'token_type': 'forgot_password'
         }
         token = generate_jwt_token(payload)
         
@@ -94,7 +96,7 @@ class ResetPasswordView(APIView):
         password = serializer.validated_data.get('password')
 
         try:
-            user = verify_token(token)
+            user = verify_token(token, 'forgot_password')
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
             response_data = {
                     "status": "error",

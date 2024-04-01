@@ -19,13 +19,13 @@ def generate_jwt_token(payload):
     return token
 
     
-def verify_token(token):
+def verify_token(token, token_type):
     try:
         decoded_token = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         user_email = decoded_token['email']
         
         user = User.objects.filter(email=user_email).first()
-        if not user:
+        if not user or token_type != decoded_token['token_type']:
             raise ValueError("Invalid token")
         return user
     

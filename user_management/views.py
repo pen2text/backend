@@ -31,7 +31,11 @@ class UserRegistrationView(generics.CreateAPIView):
                 "errors": []
             }
             
-            payload = {'email': user.email}
+            payload = {
+                'email': user.email,
+                'id': user.id,
+                'token_type': 'email_verification'
+            }
             jwt_token = generate_jwt_token(payload)
 
             # Retrieve content, subject, and receiver_email
@@ -234,7 +238,7 @@ class VerifyEmailView(generics.GenericAPIView):
     def get(self, request, token):
         
         try:
-            user = verify_token(token)
+            user = verify_token(token, 'email_verification')
             user.is_verified = True
             user.save()
             response_data = {
