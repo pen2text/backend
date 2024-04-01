@@ -5,7 +5,8 @@ from .serializers import RegistrationSerializer, UserUpdateSerializer
 from user_management.models import User
 from utils.email_utils import send_email
 from utils.jwt_token_utils import generate_jwt_token, verify_token
-
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 class BadRequest(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
@@ -57,9 +58,23 @@ class UserRegistrationView(generics.CreateAPIView):
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 class UserListView(generics.ListAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
     queryset = User.objects.all()
     serializer_class = RegistrationSerializer
     def list(self, request, *args, **kwargs):
+        user = request.user
+        if user.role == 'user':
+            response_data = {
+                "status": "error",
+                "code": status.HTTP_403_FORBIDDEN,
+                "message": "Forbidden",
+                "data": {},
+                "errors": ["You do not have permission to access this resource"]
+            }
+            return Response(response_data, status=status.HTTP_403_FORBIDDEN)
+        
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         response_data = {
@@ -72,12 +87,26 @@ class UserListView(generics.ListAPIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 class UserRetrieveByIdView(generics.RetrieveAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
     queryset = User.objects.all()
     serializer_class = RegistrationSerializer
     lookup_field = 'id'
 
     def retrieve(self, request, *args, **kwargs):
-        user_id = self.kwargs.get('id')  
+        user = request.user
+        user_id = self.kwargs.get('id') 
+        if user.role == 'user' and user.id != user_id:
+            response_data = {
+                "status": "error",
+                "code": status.HTTP_403_FORBIDDEN,
+                "message": "Forbidden",
+                "errors": ["You do not have permission to access this resource"]
+            }
+            return Response(response_data, status=status.HTTP_403_FORBIDDEN)
+        
+         
         try:
             user = self.queryset.get(id=user_id)  
         except User.DoesNotExist:
@@ -99,12 +128,25 @@ class UserRetrieveByIdView(generics.RetrieveAPIView):
         }, status=status.HTTP_200_OK)
         
 class UserRetrieveByEmailView(generics.RetrieveAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
     queryset = User.objects.all()
     serializer_class = RegistrationSerializer
     lookup_field = 'email'
 
     def retrieve(self, request, *args, **kwargs):
-        user_email = self.kwargs.get('email')  
+        user_email = self.kwargs.get('email')
+        user = request.user
+        if user.role == 'user' and user.email != user_email:
+            response_data = {
+                "status": "error",
+                "code": status.HTTP_403_FORBIDDEN,
+                "message": "Forbidden",
+                "data": {},
+                "errors": ["You do not have permission to access this resource"]
+            }
+            return Response(response_data, status=status.HTTP_403_FORBIDDEN) 
         try:
             user = self.queryset.get(email=user_email)  
         except User.DoesNotExist:
@@ -128,12 +170,25 @@ class UserRetrieveByEmailView(generics.RetrieveAPIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 class UserDeleteView(generics.DestroyAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
     queryset = User.objects.all()
     serializer_class = RegistrationSerializer
     lookup_field = 'id'
 
     def destroy(self, request, *args, **kwargs):
-        user_id = self.kwargs.get('id')  
+        user_id = self.kwargs.get('id')
+        user = request.user
+        if user.role == 'user' and user.id != user_id:
+            response_data = {
+                "status": "error",
+                "code": status.HTTP_403_FORBIDDEN,
+                "message": "Forbidden",
+                "data": {},
+                "errors": ["You do not have permission to access this resource"]
+            }
+            return Response(response_data, status=status.HTTP_403_FORBIDDEN)
         try:
             user = self.queryset.get(id=user_id)  
         except User.DoesNotExist:
@@ -180,6 +235,9 @@ class CheckEmailExistsView(generics.GenericAPIView):
         return Response(response_data, status=response_data['code'])
 
 class UserUpdateView(generics.UpdateAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
     queryset = User.objects.all()
     serializer_class = UserUpdateSerializer
 
@@ -206,6 +264,18 @@ class UserUpdateView(generics.UpdateAPIView):
 
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
+        
+        user = request.user
+        if user.role != 'user' or user.id != serializer.validated_data['id']:
+            response_data = {
+                "status": "error",
+                "code": status.HTTP_403_FORBIDDEN,
+                "message": "Forbidden",
+                "data": {},
+                "errors": ["You do not have permission to update this user's information"]
+            }
+            return Response(response_data, status=status.HTTP_403_FORBIDDEN)
+        
         self.perform_update(serializer)
         
         response_data = {
