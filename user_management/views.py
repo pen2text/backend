@@ -1,7 +1,8 @@
 from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, APIException
 from rest_framework.response import Response
-from .serializers import RegistrationSerializer, UserUpdateSerializer
+from rest_framework.views import APIView
+from .serializers import UserSerializer, UserUpdateSerializer
 from user_management.models import User
 from utils.email_utils import send_email
 from utils.jwt_token_utils import generate_jwt_token, verify_token
@@ -13,7 +14,7 @@ class BadRequest(APIException):
     default_code = 'bad_request'
 
 class UserRegistrationView(generics.CreateAPIView):
-    serializer_class = RegistrationSerializer
+    serializer_class = UserSerializer
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -58,7 +59,7 @@ class UserRegistrationView(generics.CreateAPIView):
 
 class UserListView(generics.ListAPIView):
     queryset = User.objects.all()
-    serializer_class = RegistrationSerializer
+    serializer_class = UserSerializer
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
@@ -73,7 +74,7 @@ class UserListView(generics.ListAPIView):
 
 class UserRetrieveByIdView(generics.RetrieveAPIView):
     queryset = User.objects.all()
-    serializer_class = RegistrationSerializer
+    serializer_class = UserSerializer
     lookup_field = 'id'
 
     def retrieve(self, request, *args, **kwargs):
@@ -100,7 +101,7 @@ class UserRetrieveByIdView(generics.RetrieveAPIView):
         
 class UserRetrieveByEmailView(generics.RetrieveAPIView):
     queryset = User.objects.all()
-    serializer_class = RegistrationSerializer
+    serializer_class = UserSerializer
     lookup_field = 'email'
 
     def retrieve(self, request, *args, **kwargs):
@@ -129,7 +130,7 @@ class UserRetrieveByEmailView(generics.RetrieveAPIView):
 
 class UserDeleteView(generics.DestroyAPIView):
     queryset = User.objects.all()
-    serializer_class = RegistrationSerializer
+    serializer_class = UserSerializer
     lookup_field = 'id'
 
     def destroy(self, request, *args, **kwargs):
@@ -157,7 +158,7 @@ class UserDeleteView(generics.DestroyAPIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 class CheckEmailExistsView(generics.GenericAPIView):
-    serializer_class = RegistrationSerializer
+    serializer_class = UserSerializer
     lookup_field = 'email'
     def get(self, request, *args, **kwargs):
         user_email = self.kwargs.get('email')    
@@ -229,7 +230,7 @@ class UserUpdateView(generics.UpdateAPIView):
             raise NotFound("User not found.")
 
 class VerifyEmailView(generics.GenericAPIView):
-    serializer_class = RegistrationSerializer
+    serializer_class = UserSerializer
     def get(self, request, token):
         
         try:
@@ -253,3 +254,39 @@ class VerifyEmailView(generics.GenericAPIView):
                 "errors": [str(e)]
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+class UpdateRoleView(APIView):
+    def patch(self, request, format=None):
+        role = request.data.get('role', None)
+        user_id = request.data.get('id', None)
+        print(role, user_id)
+        if not role or not user_id:
+            response_data = {
+                "status": "error", 
+                "code": status.HTTP_400_BAD_REQUEST, 
+                "message": "Both role and user_id must be provided", 
+                "errors": ["Both role and user_id must be provided"]
+            }
+            return Response(response_data, status = status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            response_data = {
+                "status": "error", 
+                "code": status.HTTP_404_NOT_FOUND, 
+                "message": "User does not exist", 
+                "errors": ["User does not exist"]
+            }
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        
+        user.role = role 
+        user.save()
+        serializer = UserSerializer(user)
+        response_data = {
+            "status": "success", 
+            "code": status.HTTP_200_OK, 
+            "message": "Role updated successfully", 
+            "data": serializer.data, 
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
