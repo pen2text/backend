@@ -1,9 +1,10 @@
 from rest_framework import serializers, status
-from rest_framework.response import Response
-from django.contrib.auth import authenticate
-from rest_framework_simplejwt.tokens import RefreshToken
-from user_management.models import User
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
+from user_management.models import User
+from utils.email_utils import send_email
+from utils.jwt_token_utils import generate_jwt_token, verify_token
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -22,6 +23,25 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             user = authenticate(email=email, password=password)
             if user:
                 if not user.is_verified:
+                    payload = {
+                        'email': user.email,
+                        'id': user.id,
+                        'token_type': 'email_verification'
+                    }
+                    jwt_token = generate_jwt_token(payload)
+
+                    # Retrieve content, subject, and receiver_email
+                    verification_url = f'http://localhost:8000/api/users/verify-email/{jwt_token}'
+                    content = "Content for email verification. " + verification_url 
+                    subject = "Email Verification"
+                    receiver_email = user.email
+                    
+                    # Send the email
+                    if send_email(content, subject, receiver_email):
+                        print("Email sent successfully!")
+                    else:
+                        print("Failed to send email.")
+                        
                     response_data = {
                         'data':{
                             'status': 'error',
