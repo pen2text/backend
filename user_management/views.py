@@ -1,8 +1,6 @@
 from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, APIException
 from rest_framework.response import Response
-from django.urls import reverse
-from django.conf import settings
 from .serializers import RegistrationSerializer, UserUpdateSerializer
 from user_management.models import User
 from utils.email_utils import send_email
