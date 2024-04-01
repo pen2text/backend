@@ -1,11 +1,23 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework_simplejwt.views import TokenObtainPairView
 from user_management.models import User
 from utils.email_utils import send_email
 from utils.jwt_token_utils import generate_jwt_token, verify_token
-from authentication.serializers import ResetPasswordSerializer
+from authentication.serializers import ResetPasswordSerializer, CustomTokenObtainPairSerializer
 
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        
+        if not serializer.is_valid():
+            return Response(serializer.errors['data'], status=serializer.errors['data']['code'])
+        
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 class ForgotPasswordView(APIView):
     queryset = User.objects.all()
