@@ -35,7 +35,7 @@ DEBUG = os.getenv('DEBUG') == 'True'
 AUTH_USER_MODEL = 'user_management.User'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(' ')
-ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = []
 
 CORS_ALLOW_ALL_ORIGINS = True
 
