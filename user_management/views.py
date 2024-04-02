@@ -33,7 +33,7 @@ class UserRegistrationView(generics.CreateAPIView):
             
             payload = {
                 'email': user.email,
-                'id': user.id,
+                'id': str(user.id),
                 'token_type': 'email_verification'
             }
             jwt_token = generate_jwt_token(payload)
