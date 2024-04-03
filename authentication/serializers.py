@@ -25,7 +25,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 if not user.is_verified:
                     payload = {
                         'email': user.email,
-                        'id': user.id,
+                        'id': str(user.id),
                         'token_type': 'email_verification'
                     }
                     jwt_token = generate_jwt_token(payload)

@@ -22,3 +22,5 @@ local_settings.py
 
 # Ignore virtual environment
 venv/
+
+/static/
