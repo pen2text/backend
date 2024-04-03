@@ -1,5 +1,7 @@
+import re
 from rest_framework import serializers
 from .models import User
+from django.contrib.auth.hashers import make_password
 
 class UserSerializer(serializers.ModelSerializer):
     
@@ -12,6 +14,19 @@ class UserSerializer(serializers.ModelSerializer):
             'is_verified': {'read_only': True},  
             'role': {'read_only': True},  
         }
+ 
+
+    def validate_gender(self, value):
+        if value.lower() not in ['male', 'female']:
+            raise serializers.ValidationError("Invalid value for gender field.")
+        return value
+            
+    def validate_password(self, value):
+        if value:
+            if not re.match(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,30}$', value):
+                raise serializers.ValidationError("Password must contain at least one lowercase letter, one uppercase letter, one digit, one special character, and be between 8 and 30 characters long.")
+        return value
+
 
     def save(self, **kwargs):
         user = User(
@@ -28,6 +43,19 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField()
+    date_of_birth = serializers.DateField()
+
+    def validate_gender(self, value):
+        if value.lower() not in ['male', 'female']:
+            raise serializers.ValidationError("Invalid value for gender field.")
+        return value
+
+    def validate_password(self, value):
+        if value:
+            if not re.match(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,30}$', value):
+                raise serializers.ValidationError("Password must contain at least one lowercase letter, one uppercase letter, one digit, one special character, and be between 8 and 30 characters long.")
+        return value
+
     class Meta:
         model = User
         fields = ('id', 'first_name', 'last_name', 'gender', 'date_of_birth', 'email', 'role', 'password', 'is_verified', 'created_at', 'updated_at')
@@ -37,7 +65,12 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             'role': {'read_only': True},  
             'email': {'read_only': True},  
         }
-        
-        def to_internal_value(self, data):
-                data['id'] = self.context['view'].kwargs['id']
-                return super().to_internal_value(data)
+
+    def update(self, instance, validated_data):
+        if 'password' not in validated_data:
+            validated_data['password'] = instance.password
+        else:
+            validated_data['password'] = make_password(validated_data['password'])
+        return super().update(instance, validated_data)
+
+
