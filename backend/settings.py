@@ -34,8 +34,10 @@ DEBUG = os.getenv('DEBUG') == 'True'
 
 AUTH_USER_MODEL = 'user_management.User'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(' ')
-# ALLOWED_HOSTS = []
+ALLOWED_HOSTS = []
+
+if not DEBUG:
+    ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(' ')
 
 CORS_ALLOW_ALL_ORIGINS = True
 
@@ -152,7 +154,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SWAGGER_SETTINGS = {
     "USE_SESSION_AUTH": False,
     "SECURITY_DEFINITIONS": {
-        "JWT Token": {
+        "Bearer ": {
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"
