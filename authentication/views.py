@@ -48,20 +48,19 @@ class ForgotPasswordView(APIView):
         
         payload = {
             'email': user.email,
-            'id': user.id,
+            'id': str(user.id),
             'token_type': 'forgot_password'
         }
         token = generate_jwt_token(payload)
         
-        # # Construct the password reset link
+        # Construct the password reset link
         password_reset_link = f'http://front.com/reset-password/?token={token}'
 
-        # # Send the password reset email using your utility function
+        # Send the password reset email using your utility function
         content = "Content for password reset. " + password_reset_link 
         subject = "Password reset instructions"
         receiver_email = user_email
         
-        # # Send the email
         response_data = {
             "status": "success",
             "code": status.HTTP_200_OK,

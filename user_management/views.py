@@ -1,5 +1,5 @@
 from rest_framework import generics, status
-from rest_framework.exceptions import NotFound, APIException
+from rest_framework.exceptions import NotFound, APIException, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .serializers import UserSerializer, UserUpdateSerializer
@@ -9,6 +9,7 @@ from utils.jwt_token_utils import generate_jwt_token, verify_token
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+
 class BadRequest(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_detail = 'Bad Request'
@@ -17,7 +18,7 @@ class BadRequest(APIException):
 class UserRegistrationView(generics.CreateAPIView):
     serializer_class = UserSerializer
 
-    def create(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
@@ -53,12 +54,14 @@ class UserRegistrationView(generics.CreateAPIView):
             
             return Response(response_data, status=status.HTTP_201_CREATED)
         else:
+            errors = {}
+            for field, error_messages in serializer.errors.items():
+                errors[field] = error_messages[0] if isinstance(error_messages, list) else error_messages
             response_data = {
-                "status": "error",
-                "code": status.HTTP_400_BAD_REQUEST,
-                "message": "Validation failed",
-                "data": {},
-                "errors": serializer.errors
+                'status': 'error',
+                'code': status.HTTP_400_BAD_REQUEST,
+                'message': 'Validation failed',
+                'errors': errors
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
@@ -239,70 +242,6 @@ class CheckEmailExistsView(generics.GenericAPIView):
         
         return Response(response_data, status=response_data['code'])
 
-class UserUpdateView(generics.UpdateAPIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-    
-    queryset = User.objects.all()
-    serializer_class = UserUpdateSerializer
-
-    def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        try:
-            instance = self.get_object()
-        except NotFound as e:
-            response_data = {
-                'status': 'error', 
-                "status": status.HTTP_404_NOT_FOUND,
-                'message': str(e),
-                'errors': [str(e)],
-            }
-            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
-        except BadRequest as e:
-            response_data = {
-                'status': 'error', 
-                "status": status.HTTP_400_BAD_REQUEST,
-                'message': str(e),
-                'errors': [str(e)],
-            }
-            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
-
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        
-        user = request.user
-        if user.role != 'user' or user.id != serializer.validated_data['id']:
-            response_data = {
-                "status": "error",
-                "code": status.HTTP_403_FORBIDDEN,
-                "message": "Forbidden",
-                "data": {},
-                "errors": ["You do not have permission to update this user's information"]
-            }
-            return Response(response_data, status=status.HTTP_403_FORBIDDEN)
-        
-        self.perform_update(serializer)
-        
-        response_data = {
-            "status": "success",
-            "code": status.HTTP_200_OK,
-            "message": "User updated successfully",
-            "data": serializer.data,
-            "errors": []
-        }
-        return Response(response_data, status=status.HTTP_200_OK)
-
-    def get_object(self):
-        user_id = self.request.data.get('id')
-        
-        if user_id is None:
-            raise BadRequest("ID not provided in the request data.")
-        
-        try:
-            return User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            raise NotFound("User not found.")
-
 class VerifyEmailView(generics.GenericAPIView):
     serializer_class = UserSerializer
     def get(self, request, token):
@@ -377,3 +316,84 @@ class UpdateRoleView(APIView):
             "data": serializer.data, 
         }
         return Response(response_data, status=status.HTTP_200_OK)
+    
+class UserUpdateView(generics.UpdateAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    queryset = User.objects.all()
+    serializer_class = UserUpdateSerializer
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+
+        try:
+            instance = self.get_object()
+        except NotFound as e:
+            response_data = {
+                'status': 'error', 
+                'code': status.HTTP_404_NOT_FOUND,
+                'message': str(e),
+                'errors': [str(e)],
+            }
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        except BadRequest as e:
+            response_data = {
+                'status': 'error', 
+                "status": status.HTTP_400_BAD_REQUEST,
+                'message': str(e),
+                'errors': [str(e)],
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        
+        try:
+            serializer.is_valid(raise_exception=True)
+        except ValidationError as e:
+            errors = {}
+            for field, error_messages in e.detail.items():
+                errors[field] = error_messages[0] if isinstance(error_messages, list) else error_messages
+            response_data = {
+                'status': 'error',
+                'code': status.HTTP_400_BAD_REQUEST,
+                'message': 'Validation failed',
+                'errors': errors
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        user = request.user
+        if user.role != 'user' or user.id != serializer.validated_data['id']:
+            response_data = {
+                "status": "error",
+                "code": status.HTTP_403_FORBIDDEN,
+                "message": "Forbidden",
+                "errors": ["You do not have permission to update this user's information"]
+            }
+            return Response(response_data, status=status.HTTP_403_FORBIDDEN)
+
+        # If password is not provided or empty, retain the existing password
+        if 'password' in request.data and not request.data['password']: 
+            serializer.validated_data.pop('password')
+
+        serializer.validated_data['gender'] = serializer.validated_data['gender'].lower()
+        self.perform_update(serializer)
+        
+        response_data = {
+            "status": "success",
+            "code": status.HTTP_200_OK,
+            "message": "User updated successfully",
+            "data": serializer.data,
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
+
+    def get_object(self):
+        user_id = self.request.data.get('id')
+        
+        if user_id is None:
+            raise BadRequest("ID not provided in the request data.")
+        
+        try:
+            return User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            raise NotFound("User doesn't found!")
