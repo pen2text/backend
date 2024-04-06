@@ -8,12 +8,7 @@ from utils.email_utils import send_email
 from utils.jwt_token_utils import generate_jwt_token, verify_token
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-
-
-class BadRequest(APIException):
-    status_code = status.HTTP_400_BAD_REQUEST
-    default_detail = 'Bad Request'
-    default_code = 'bad_request'
+from exception.badRequest import BadRequest
 
 class UserRegistrationView(generics.CreateAPIView):
     serializer_class = UserSerializer
@@ -114,7 +109,6 @@ class UserRetrieveByIdView(generics.RetrieveAPIView):
             }
             return Response(response_data, status=status.HTTP_403_FORBIDDEN)
         
-         
         try:
             user = self.queryset.get(id=user_id)  
         except User.DoesNotExist:
@@ -122,7 +116,6 @@ class UserRetrieveByIdView(generics.RetrieveAPIView):
                 "status": "error",
                 "code": status.HTTP_404_NOT_FOUND,
                 "message": "User not found",
-                "data": {},
                 "errors": ["User not found with the provided ID"]
             }, status=status.HTTP_404_NOT_FOUND)
 
@@ -132,7 +125,6 @@ class UserRetrieveByIdView(generics.RetrieveAPIView):
             "code": status.HTTP_200_OK,
             "message": "User retrieved successfully",
             "data": serializer.data,
-            "errors": []
         }, status=status.HTTP_200_OK)
         
 class UserRetrieveByEmailView(generics.RetrieveAPIView):

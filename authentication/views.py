@@ -7,8 +7,6 @@ from utils.email_utils import send_email
 from utils.jwt_token_utils import generate_jwt_token, verify_token
 from authentication.serializers import ResetPasswordSerializer, CustomTokenObtainPairSerializer
 
-
-
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
     def post(self, request, *args, **kwargs):
