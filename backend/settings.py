@@ -14,7 +14,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
 import dj_database_url
-
+import cloudinary
+          
 
 # Load environment variables from .env file
 load_dotenv()
@@ -34,10 +35,9 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 
 AUTH_USER_MODEL = 'user_management.User'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(' ')
-# ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(' ')
+ALLOWED_HOSTS = []
 
-    
 CORS_ALLOW_ALL_ORIGINS = True
 
 # rest_framework settings
@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'user_management',
     'authentication',
+    'converter',
     'conversion_management',
     'rest_framework',
     'rest_framework_simplejwt',
@@ -171,9 +172,13 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-EMAIL_USE_TLS = True  # Enable TLS (Transport Layer Security) for secure connection
+EMAIL_USE_TLS = True  
 
-
+cloudinary.config( 
+  cloud_name = os.getenv('CLOUDINARY_CLOUD_NAME'),
+  api_key = os.getenv('CLOUDINARY_API_KEY'), 
+  api_secret = os.getenv('CLOUDINARY_API_SECRET'),
+)
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),

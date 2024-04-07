@@ -3,13 +3,16 @@ from rest_framework.response import Response
 from exception.badRequest import BadRequest
 from .models import ConversionHistory
 from .serializers import ConversionHistorySerializer, ConversionHistoryUpdateSerializer
+from utils.format_errors import validation_error
+
 
 class ConversionHistoryListView(generics.ListAPIView):
     queryset = ConversionHistory.objects.all()
     serializer_class = ConversionHistorySerializer
     
     def get(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
+        user = request.user
+        queryset = self.get_queryset().filter(user=user)
         serializer = self.get_serializer(queryset, many=True)
         response_data = {
             'status': 'OK',
@@ -18,37 +21,16 @@ class ConversionHistoryListView(generics.ListAPIView):
         }
         return Response(response_data, status=status.HTTP_200_OK)
         
-class ConversionHistoryCreateView(generics.CreateAPIView):
-    queryset = ConversionHistory.objects.all()
-    serializer_class = ConversionHistorySerializer
-    
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if not serializer.is_valid():
-            response_data = {
-                'status': 'FAILED',
-                'message': 'Validation Error',
-                'data': serializer.errors
-            }
-            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
-        
-        serializer.save()
-        response_data = {
-            'status': 'OK',
-            'message': 'Conversion History Created',
-            'data': serializer.data
-        }
-        return Response(response_data, status=status.HTTP_201_CREATED)
-
 class ConversionHistoryRetrieveByIdView(generics.RetrieveAPIView):
     queryset = ConversionHistory.objects.all()
     serializer_class = ConversionHistorySerializer
     lookup_field = 'id'
     
     def get(self, request, *args, **kwargs):
+        user = request.user
         conversion_id = kwargs.get('id')
         try:
-            conversion = self.queryset.get(id=conversion_id)
+            conversion = self.queryset.get(id=conversion_id, user=user)
         except ConversionHistory.DoesNotExist:
             response_data = {
                 'status': 'FAILED',
@@ -71,9 +53,10 @@ class ConversionHistoryDeleteView(generics.DestroyAPIView):
     lookup_field = 'id'
     
     def delete(self, request, *args, **kwargs):
+        user = request.user
         conversion_id = kwargs.get('id')
         try:
-            conversion = self.queryset.get(id=conversion_id)
+            conversion = self.queryset.get(id=conversion_id, user=user)
         except ConversionHistory.DoesNotExist:
             response_data = {
                 'status': 'FAILED',
@@ -94,7 +77,7 @@ class ConversionHistoryUpdateView(generics.UpdateAPIView):
     serializer_class = ConversionHistoryUpdateSerializer
     
     def put(self, request, *args, **kwargs):
-        
+        user = request.user
         conversion_id = request.data.get('id')
         if not conversion_id:
             response_data = {
@@ -105,7 +88,7 @@ class ConversionHistoryUpdateView(generics.UpdateAPIView):
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            isinstance = self.queryset.get(id=conversion_id)
+            isinstance = self.queryset.get(id=conversion_id, user=user)
         except ConversionHistory.DoesNotExist:
             response_data = {
                 'status': 'FAILED',
@@ -119,7 +102,7 @@ class ConversionHistoryUpdateView(generics.UpdateAPIView):
             response_data = {
                 'status': 'FAILED',
                 'message': 'Validation Error',
-                'data': serializer.errors
+                'data': validation_error(serializer.errors)
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         
@@ -131,3 +114,26 @@ class ConversionHistoryUpdateView(generics.UpdateAPIView):
         }
         return Response(response_data, status=status.HTTP_200_OK)
 
+class ConversionHistoryCreateView(generics.CreateAPIView):
+    queryset = ConversionHistory.objects.all()
+    serializer_class = ConversionHistorySerializer
+    
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            response_data = {
+                'status': 'FAILED',
+                'message': 'Validation Error',
+                'data': validation_error(serializer.errors)
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer.validated_data['user'] = request.user
+        
+        serializer.save()
+        response_data = {
+            'status': 'OK',
+            'message': 'Conversion History Created',
+            'data': serializer.data
+        }
+        return Response(response_data, status=status.HTTP_201_CREATED)
