@@ -35,7 +35,6 @@ class ConversionHistoryRetrieveByIdView(generics.RetrieveAPIView):
             response_data = {
                 'status': 'FAILED',
                 'message': 'Conversion History Not Found',
-                'error': {'Conversion History Not Found'}
             }
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
         
@@ -61,7 +60,6 @@ class ConversionHistoryDeleteView(generics.DestroyAPIView):
             response_data = {
                 'status': 'FAILED',
                 'message': 'Conversion History Not Found',
-                'error': {'Conversion History Not Found'}
             }
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
         
@@ -83,7 +81,6 @@ class ConversionHistoryUpdateView(generics.UpdateAPIView):
             response_data = {
                 'status': 'FAILED',
                 'message': 'Conversion ID is required',
-                'error': {'Conversion ID is required'}
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         
@@ -93,7 +90,6 @@ class ConversionHistoryUpdateView(generics.UpdateAPIView):
             response_data = {
                 'status': 'FAILED',
                 'message': 'Conversion History Not Found',
-                'error': {'Conversion History Not Found'}
             }
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
         
@@ -102,7 +98,7 @@ class ConversionHistoryUpdateView(generics.UpdateAPIView):
             response_data = {
                 'status': 'FAILED',
                 'message': 'Validation Error',
-                'data': validation_error(serializer.errors)
+                'errors': validation_error(serializer.errors)
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         
@@ -124,7 +120,7 @@ class ConversionHistoryCreateView(generics.CreateAPIView):
             response_data = {
                 'status': 'FAILED',
                 'message': 'Validation Error',
-                'data': validation_error(serializer.errors)
+                'errors': validation_error(serializer.errors)
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         

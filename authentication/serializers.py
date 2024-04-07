@@ -43,12 +43,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                         print("Failed to send email.")
                         
                     response_data = {
-                        'data':{
-                            'status': 'error',
-                            'code': status.HTTP_400_BAD_REQUEST,
-                            'message': "User account isn't verified.",
-                            'errors': ["User account isn't verified."],
-                        }
+                        'status': 'FAILED',
+                        'message': "User account isn't verified.",
+                        'errors': ["User account isn't verified."],
                     }
                     raise serializers.ValidationError(response_data)
                 
@@ -56,8 +53,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 refresh['email'] = user.email
                 refresh['role'] = user.role
                 response_data = {
-                    'status': 'success',
-                    'code': status.HTTP_200_OK,
+                    'status': 'OK',
                     'message': 'Successfully logged in.',
                     'data':{
                         'access_token': str(refresh.access_token),
@@ -67,22 +63,16 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 return response_data
             else:
                 response_data = {
-                    'data':{
-                        'status': 'error',
-                        'code': status.HTTP_401_UNAUTHORIZED,
-                        'message': 'Wrong email or password.',
-                        'errors': ['Wrong email or password.'],
-                    }
+                    'status': 'FAILED',
+                    'message': 'Wrong email or password.',
+                    'errors': ['Wrong email or password.'],                    
                 }
                 raise serializers.ValidationError(response_data)
         else:
             response_data = {
-                'data':{
-                    'status': 'error',
-                    'code': status.HTTP_400_BAD_REQUEST,
-                    'message': '"email" and "password" are required.',
-                    'errors': ['"email" and "password" are required.'],
-                }
+                'status': 'FAILED',
+                'message': '"email" and "password" are required.',
+                'errors': ['"email" and "password" are required.'],          
             }
             raise serializers.ValidationError(response_data)
 

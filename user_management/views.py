@@ -9,6 +9,7 @@ from utils.jwt_token_utils import generate_jwt_token, verify_token
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from exception.badRequest import BadRequest
+from utils.format_errors import validation_error
 
 class UserRegistrationView(generics.CreateAPIView):
     serializer_class = UserSerializer
@@ -18,14 +19,12 @@ class UserRegistrationView(generics.CreateAPIView):
         if serializer.is_valid():
             user = serializer.save()
             response_data = {
-                "status": "success",
-                "code": status.HTTP_201_CREATED,
-                "message": "User created",
+                "status": "OK",
+                "message": "User created successfully",
                 "data": {
                     **serializer.data, 
                     "id": user.id,
                     },
-                "errors": []
             }
             
             payload = {
@@ -49,14 +48,10 @@ class UserRegistrationView(generics.CreateAPIView):
             
             return Response(response_data, status=status.HTTP_201_CREATED)
         else:
-            errors = {}
-            for field, error_messages in serializer.errors.items():
-                errors[field] = error_messages[0] if isinstance(error_messages, list) else error_messages
             response_data = {
-                'status': 'error',
-                'code': status.HTTP_400_BAD_REQUEST,
+                'status': 'FAILED',
                 'message': 'Validation failed',
-                'errors': errors
+                'errors': validation_error(serializer.errors)
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
@@ -70,22 +65,17 @@ class UserListView(generics.ListAPIView):
         user = request.user
         if user.role == 'user':
             response_data = {
-                "status": "error",
-                "code": status.HTTP_403_FORBIDDEN,
-                "message": "Forbidden",
-                "data": {},
-                "errors": ["You do not have permission to access this resource"]
+                "status": "FAILED",
+                "message": "Forbidden: You do not have permission to access this resource",
             }
             return Response(response_data, status=status.HTTP_403_FORBIDDEN)
         
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         response_data = {
-            "status": "success",
-            "code": status.HTTP_200_OK,
+            "status": "OK",
             "message": "Users retrieved successfully",
             "data": serializer.data,
-            "errors": []
         }
         return Response(response_data, status=status.HTTP_200_OK)
 
@@ -102,10 +92,8 @@ class UserRetrieveByIdView(generics.RetrieveAPIView):
         user_id = self.kwargs.get('id') 
         if user.role == 'user' and user.id != user_id:
             response_data = {
-                "status": "error",
-                "code": status.HTTP_403_FORBIDDEN,
-                "message": "Forbidden",
-                "errors": ["You do not have permission to access this resource"]
+                "status": "FAILED",
+                "message": "Forbidden: You do not have permission to access this resource",
             }
             return Response(response_data, status=status.HTTP_403_FORBIDDEN)
         
@@ -113,16 +101,13 @@ class UserRetrieveByIdView(generics.RetrieveAPIView):
             user = self.queryset.get(id=user_id)  
         except User.DoesNotExist:
             return Response({
-                "status": "error",
-                "code": status.HTTP_404_NOT_FOUND,
-                "message": "User not found",
-                "errors": ["User not found with the provided ID"]
+                "status": "FAILED",
+                "message": "User not found with the provided ID",
             }, status=status.HTTP_404_NOT_FOUND)
 
         serializer = self.get_serializer(user)  
         return Response({
-            "status": "success",
-            "code": status.HTTP_200_OK,
+            "status": "OK",
             "message": "User retrieved successfully",
             "data": serializer.data,
         }, status=status.HTTP_200_OK)
@@ -140,32 +125,24 @@ class UserRetrieveByEmailView(generics.RetrieveAPIView):
         user = request.user
         if user.role == 'user' and user.email != user_email:
             response_data = {
-                "status": "error",
-                "code": status.HTTP_403_FORBIDDEN,
-                "message": "Forbidden",
-                "data": {},
-                "errors": ["You do not have permission to access this resource"]
+                "status": "FAILED",
+                "message": "Forbidden: You do not have permission to access this resource",
             }
             return Response(response_data, status=status.HTTP_403_FORBIDDEN) 
         try:
             user = self.queryset.get(email=user_email)  
         except User.DoesNotExist:
             response_data = {
-                "status": "error",
-                "code": status.HTTP_404_NOT_FOUND,
-                "message": "User not found",
-                "data": {},
-                "errors": ["User not found with the provided email"]
+                "status": "FAILED",
+                "message": "User not found with the provided email",
             }
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
 
         serializer = self.get_serializer(user)
         response_data = {
-            "status": "success",
-            "code": status.HTTP_200_OK,
+            "status": "OK",
             "message": "User retrieved successfully",
             "data": serializer.data,
-            "errors": []
         }
         return Response(response_data, status=status.HTTP_200_OK)
 
@@ -182,32 +159,23 @@ class UserDeleteView(generics.DestroyAPIView):
         user = request.user
         if user.role == 'user' and user.id != user_id:
             response_data = {
-                "status": "error",
-                "code": status.HTTP_403_FORBIDDEN,
-                "message": "Forbidden",
-                "data": {},
-                "errors": ["You do not have permission to access this resource"]
+                "status": "FAILED",
+                "message": "Forbidden: You do not have permission to access this resource",
             }
             return Response(response_data, status=status.HTTP_403_FORBIDDEN)
         try:
             user = self.queryset.get(id=user_id)  
         except User.DoesNotExist:
             response_data = {
-                "status": "error",
-                "code": status.HTTP_404_NOT_FOUND,
-                "message": "User not found",
-                "data": {},
-                "errors": ["User not found with the provided ID"]
+                "status": "FAILED",
+                "message": "User not found with the provided ID",
             }
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
 
         self.perform_destroy(user)
         response_data = {
-            "status": "success",
-            "code": status.HTTP_200_OK,
+            "status": "OK",
             "message": "User deleted successfully",
-            "data": {},
-            "errors": []
         }
         return Response(response_data, status=status.HTTP_200_OK)
 
@@ -217,22 +185,21 @@ class CheckEmailExistsView(generics.GenericAPIView):
     def get(self, request, *args, **kwargs):
         user_email = self.kwargs.get('email')    
         if not user_email:
-            return Response({'status': 'error', 'message': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'status': 'FAILED', 'message': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
     
         user_exists = User.objects.filter(email=user_email).exists()
         response_data = {
-            "status": "success",
-            "code": status.HTTP_200_OK,
-            "message": "Email existence checked successfully",
-            "data": {"email_exists": user_exists},
-            "errors": []
+            "status": "OK",
+            "message": "Email existence checked successfully",               
         }
-        if not user_exists:
-            response_data['message'] = "Email does not exist"
-            response_data['status'] = "error"
-            response_data['code'] = status.HTTP_404_NOT_FOUND
         
-        return Response(response_data, status=response_data['code'])
+        code = status.HTTP_200_OK
+        if not user_exists:
+            response_data['status'] = "FAILED"
+            response_data['message'] = "Email does not exist"
+            code = status.HTTP_404_NOT_FOUND
+        
+        return Response(response_data, status=code)
 
 class VerifyEmailView(generics.GenericAPIView):
     serializer_class = UserSerializer
@@ -243,20 +210,14 @@ class VerifyEmailView(generics.GenericAPIView):
             user.is_verified = True
             user.save()
             response_data = {
-                "status": "success",
-                "code": status.HTTP_200_OK,
+                "status": "OK",
                 "message": "Email verified successfully.",
-                "data": {},
-                "errors": []
             }
             return Response(response_data, status=status.HTTP_200_OK)
         except ValueError as e:
             response_data = {
-                "status": "error",
-                "code": status.HTTP_400_BAD_REQUEST,
+                "status": "FAILED",
                 "message": str(e),
-                "data": {},
-                "errors": [str(e)]
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
@@ -270,20 +231,16 @@ class UpdateRoleView(APIView):
         
         if not role or not user_id:
             response_data = {
-                "status": "error", 
-                "code": status.HTTP_400_BAD_REQUEST, 
+                "status": "FAILED", 
                 "message": "Both role and user_id must be provided", 
-                "errors": ["Both role and user_id must be provided"]
             }
             return Response(response_data, status = status.HTTP_400_BAD_REQUEST)
         
         user = request.user
         if user.role != 'admin':
             response_data = {
-                "status": "error",
-                "code": status.HTTP_403_FORBIDDEN,
-                "message": "Forbidden",
-                "errors": ["You do not have permission to update user roles"]
+                "status": "FAILED",
+                "message": "Forbidden: You do not have permission to update user roles",
             }
             return Response(response_data, status=status.HTTP_403_FORBIDDEN)
         
@@ -291,10 +248,8 @@ class UpdateRoleView(APIView):
             user = User.objects.get(id=user_id)
         except User.DoesNotExist:
             response_data = {
-                "status": "error", 
-                "code": status.HTTP_404_NOT_FOUND, 
+                "status": "FAILED", 
                 "message": "User does not exist", 
-                "errors": ["User does not exist"]
             }
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
         
@@ -302,10 +257,9 @@ class UpdateRoleView(APIView):
         user.save()
         serializer = UserSerializer(user)
         response_data = {
-            "status": "success", 
-            "code": status.HTTP_200_OK, 
+            "status": "OK", 
             "message": "Role updated successfully", 
-            "data": serializer.data, 
+            "data": serializer.validated_data, 
         }
         return Response(response_data, status=status.HTTP_200_OK)
     
@@ -323,18 +277,14 @@ class UserUpdateView(generics.UpdateAPIView):
             instance = self.get_object()
         except NotFound as e:
             response_data = {
-                'status': 'error', 
-                'code': status.HTTP_404_NOT_FOUND,
+                'status': 'FAILED', 
                 'message': str(e),
-                'errors': [str(e)],
             }
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
         except BadRequest as e:
             response_data = {
-                'status': 'error', 
-                "status": status.HTTP_400_BAD_REQUEST,
+                'status': 'FAILED', 
                 'message': str(e),
-                'errors': [str(e)],
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
@@ -343,24 +293,18 @@ class UserUpdateView(generics.UpdateAPIView):
         try:
             serializer.is_valid(raise_exception=True)
         except ValidationError as e:
-            errors = {}
-            for field, error_messages in e.detail.items():
-                errors[field] = error_messages[0] if isinstance(error_messages, list) else error_messages
             response_data = {
-                'status': 'error',
-                'code': status.HTTP_400_BAD_REQUEST,
+                'status': 'FAILED',
                 'message': 'Validation failed',
-                'errors': errors
+                'errors': validation_error(e.detail)
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
         user = request.user
         if user.role != 'user' or user.id != serializer.validated_data['id']:
             response_data = {
-                "status": "error",
-                "code": status.HTTP_403_FORBIDDEN,
-                "message": "Forbidden",
-                "errors": ["You do not have permission to update this user's information"]
+                "status": "FAILED",
+                "message": "Forbidden: You do not have permission to update this user's information",
             }
             return Response(response_data, status=status.HTTP_403_FORBIDDEN)
 
@@ -372,8 +316,7 @@ class UserUpdateView(generics.UpdateAPIView):
         self.perform_update(serializer)
         
         response_data = {
-            "status": "success",
-            "code": status.HTTP_200_OK,
+            "status": "OK",
             "message": "User updated successfully",
             "data": serializer.data,
         }
