@@ -14,7 +14,12 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         serializer = self.serializer_class(data=request.data)
         
         if not serializer.is_valid():
-            return Response(validation_error(serializer.errors), status=status.HTTP_400_BAD_REQUEST)
+            response_data = {
+                "status": "FAILED",
+                "message": "Validation error",
+                "errors": validation_error(serializer.errors)
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
@@ -27,7 +32,6 @@ class ForgotPasswordView(APIView):
             response_data = {
                 "status": "OK",
                 "message": "Email is required",
-                "errors": ["Email is required"]
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         
@@ -37,7 +41,6 @@ class ForgotPasswordView(APIView):
             response_data = {
                 "status": "FAILED",
                 "message": "User with this email does not exist",
-                "errors": ["User with this email does not exist"]
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         
@@ -64,7 +67,6 @@ class ForgotPasswordView(APIView):
         if not send_email(content, subject, receiver_email):
             response_data["status"] = "FAILED"
             response_data["message"] = "An error occurred while sending the email"
-            response_data["errors"] = ["An error occurred while sending the email"]
         
         return Response(response_data, status=response_data["code"])
 
@@ -90,7 +92,6 @@ class ResetPasswordView(APIView):
             response_data = {
                     "status": "FAILED",
                     "message": "Invalid token",
-                    "errors": "Invalid token"
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
