@@ -4,9 +4,14 @@ from exception.badRequest import BadRequest
 from .models import ConversionHistory
 from .serializers import ConversionHistorySerializer, ConversionHistoryUpdateSerializer
 from utils.format_errors import validation_error
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
 class ConversionHistoryListView(generics.ListAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
     queryset = ConversionHistory.objects.all()
     serializer_class = ConversionHistorySerializer
     
@@ -22,6 +27,9 @@ class ConversionHistoryListView(generics.ListAPIView):
         return Response(response_data, status=status.HTTP_200_OK)
         
 class ConversionHistoryRetrieveByIdView(generics.RetrieveAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
     queryset = ConversionHistory.objects.all()
     serializer_class = ConversionHistorySerializer
     lookup_field = 'id'
@@ -29,6 +37,7 @@ class ConversionHistoryRetrieveByIdView(generics.RetrieveAPIView):
     def get(self, request, *args, **kwargs):
         user = request.user
         conversion_id = kwargs.get('id')
+        
         try:
             conversion = self.queryset.get(id=conversion_id, user=user)
         except ConversionHistory.DoesNotExist:
@@ -47,6 +56,9 @@ class ConversionHistoryRetrieveByIdView(generics.RetrieveAPIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 class ConversionHistoryDeleteView(generics.DestroyAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
     queryset = ConversionHistory.objects.all()
     serializer_class = ConversionHistorySerializer
     lookup_field = 'id'
@@ -54,6 +66,7 @@ class ConversionHistoryDeleteView(generics.DestroyAPIView):
     def delete(self, request, *args, **kwargs):
         user = request.user
         conversion_id = kwargs.get('id')
+        
         try:
             conversion = self.queryset.get(id=conversion_id, user=user)
         except ConversionHistory.DoesNotExist:
@@ -71,6 +84,9 @@ class ConversionHistoryDeleteView(generics.DestroyAPIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 class ConversionHistoryUpdateView(generics.UpdateAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
     queryset = ConversionHistory.objects.all()
     serializer_class = ConversionHistoryUpdateSerializer
     
@@ -111,6 +127,9 @@ class ConversionHistoryUpdateView(generics.UpdateAPIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 class ConversionHistoryCreateView(generics.CreateAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
     queryset = ConversionHistory.objects.all()
     serializer_class = ConversionHistorySerializer
     
