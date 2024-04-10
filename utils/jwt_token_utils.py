@@ -3,12 +3,11 @@ import jwt
 import datetime
 from user_management.models import User
 SECRET_KEY = os.getenv('SECRET_KEY')
-EXPIRY_MINUTES = 60
 
-def generate_jwt_token(payload):
+def generate_jwt_token(payload, expiry_minutes=2):
 
     # Calculate expiry time
-    expiry_time = datetime.datetime.now() + datetime.timedelta(minutes=EXPIRY_MINUTES)
+    expiry_time = datetime.datetime.now() + datetime.timedelta(minutes=expiry_minutes)
     
     # Add expiry time to payload
     payload['exp'] = expiry_time

@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'user_management',
     'authentication',
     'converter',
+    'remote_handler',
     'conversion_management',
     'rest_framework',
     'rest_framework_simplejwt',

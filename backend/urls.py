@@ -27,6 +27,7 @@ urlpatterns = [
     path('api/', include('user_management.urls')),
     path('api/', include('authentication.urls')),
     path('api/', include('converter.urls')),
+    path('api/', include('remote_handler.urls')),
     path('api/', include('conversion_management.urls')),
     path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
