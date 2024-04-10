@@ -6,8 +6,9 @@ class ConverterSerializer(serializers.Serializer):
     image = serializers.ImageField()
     
     class Meta:
-        fields = ['index', 'image', 'text-content', 'status']
+        fields = ['index', 'image', 'text-content', 'state']
         extra_kwargs = {
+            'image': {'write_only': True},
             'text-content': {'read_only': True},
-            'status': {'read_only': True}
+            'state': {'read_only': True},
         }
