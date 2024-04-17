@@ -24,7 +24,7 @@ class RemoteAPITokenManagerCreateView(generics.CreateAPIView):
             }
         
         payload = {
-            'token_type': 'api-access-token',
+            'token_type': 'remote-access-key',
             'id': str(user.id),
             'email': user.email,
         }

@@ -21,14 +21,11 @@ def generate_jwt_token(payload, expiry_minutes=2):
 def verify_token(token, token_type):
     try:
         decoded_token = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
-        user_email = decoded_token['email']
+        user_id = decoded_token['id']
+        user = User.objects.filter(id=user_id).first()
         
-        user = User.objects.filter(email=user_email).first()
         if not user or token_type != decoded_token['token_type']:
-            raise ValueError("Invalid token")
+            raise ValueError("Invalid token or token get expired")
         return user
-    
-    except jwt.ExpiredSignatureError:
-        raise ValueError("Token expired")
-    except jwt.InvalidTokenError:
-        raise ValueError("Invalid token")
+    except (jwt.ExpiredSignatureError or jwt.InvalidTokenError):
+        raise ValueError("Invalid token or token get expired")
