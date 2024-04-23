@@ -1,11 +1,10 @@
 from rest_framework import generics, status
-from rest_framework.exceptions import NotFound, APIException, ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .serializers import UserSerializer, UserUpdateSerializer
 from user_management.models import User
-from utils.email_utils import send_email
-from utils.jwt_token_utils import generate_jwt_token, verify_token
+from utils.email_utils import send_verification_email
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from exception.badRequest import BadRequest
@@ -16,44 +15,30 @@ class UserRegistrationView(generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            response_data = {
-                "status": "OK",
-                "message": "User created successfully",
-                "data": {
-                    **serializer.data, 
-                    "id": user.id,
-                    },
-            }
-            
-            payload = {
-                'email': user.email,
-                'id': str(user.id),
-                'token_type': 'email_verification'
-            }
-            jwt_token = generate_jwt_token(payload)
-
-            # Retrieve content, subject, and receiver_email
-            verification_url = f'http://localhost:8000/api/users/verify-email/{jwt_token}'
-            content = "Content for email verification. " + verification_url 
-            subject = "Email Verification"
-            receiver_email = user.email
-            
-            # Send the email
-            if send_email(content, subject, receiver_email):
-                print("Email sent successfully!")
-            else:
-                print("Failed to send email.")
-            
-            return Response(response_data, status=status.HTTP_201_CREATED)
-        else:
+        
+        if not serializer.is_valid():
             response_data = {
                 'status': 'FAILED',
                 'message': 'Validation failed',
                 'errors': validation_error(serializer.errors)
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = serializer.save()
+        
+        response_data = {
+            "status": "OK",
+            "message": "User created successfully",
+            "data": {
+                "id": user.id,
+                **serializer.data,
+            }
+        }
+        
+        #send verification email
+        send_verification_email(user)
+        
+        return Response(response_data, status=status.HTTP_201_CREATED)
 
 class UserListView(generics.ListAPIView):
     authentication_classes = [JWTAuthentication]
@@ -200,26 +185,6 @@ class CheckEmailExistsView(generics.GenericAPIView):
             code = status.HTTP_404_NOT_FOUND
         
         return Response(response_data, status=code)
-
-class VerifyEmailView(generics.GenericAPIView):
-    serializer_class = UserSerializer
-    def get(self, request, token):
-        
-        try:
-            user = verify_token(token, 'email_verification')
-            user.is_verified = True
-            user.save()
-            response_data = {
-                "status": "OK",
-                "message": "Email verified successfully.",
-            }
-            return Response(response_data, status=status.HTTP_200_OK)
-        except ValueError as e:
-            response_data = {
-                "status": "FAILED",
-                "message": str(e),
-            }
-            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 class UpdateRoleView(APIView):
     authentication_classes = [JWTAuthentication]

@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.views import TokenObtainPairView
 from user_management.models import User
-from utils.email_utils import send_email
-from utils.jwt_token_utils import generate_jwt_token, verify_token
+from utils.email_utils import send_reset_password_email
+from utils.jwt_token_utils import verify_token
 from utils.format_errors import validation_error
 from authentication.serializers import ResetPasswordSerializer, CustomTokenObtainPairSerializer
 
@@ -44,29 +44,15 @@ class ForgotPasswordView(APIView):
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         
-        payload = {
-            'email': user.email,
-            'id': str(user.id),
-            'token_type': 'forgot_password'
-        }
-        token = generate_jwt_token(payload)
-        
-        # Construct the password reset link
-        password_reset_link = f'http://front.com/reset-password/?token={token}'
-
-        # Send the password reset email using your utility function
-        content = "Content for password reset. " + password_reset_link 
-        subject = "Password reset instructions"
-        receiver_email = user_email
-        
         response_data = {
             "status": "OK",
-            "message": "Password reset email sent",
+            "message": "Password reset email has been sent",
         }
         
-        if not send_email(content, subject, receiver_email):
+        #send password rest email
+        if not send_reset_password_email(user):
             response_data["status"] = "FAILED"
-            response_data["message"] = "An error occurred while sending the email"
+            response_data["message"] = "An error occurred while sending the email. Please try again later."
         
         return Response(response_data, status=response_data["code"])
 
@@ -102,3 +88,21 @@ class ResetPasswordView(APIView):
                 "message": "Password updated successfully",
         }
         return Response(response_data, status=status.HTTP_200_OK)
+    
+class VerifyEmailView(APIView):
+    def get(self, request, token):
+        try:
+            user = verify_token(token, 'email_verification')
+            user.is_verified = True
+            user.save()
+            response_data = {
+                "status": "OK",
+                "message": "Email verified successfully.",
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+        except ValueError as e:
+            response_data = {
+                "status": "FAILED",
+                "message": str(e),
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
