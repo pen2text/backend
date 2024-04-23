@@ -8,7 +8,5 @@ urlpatterns = [
     path('users/get-by-id/<uuid:id>', views.UserRetrieveByIdView.as_view(), name='user-retrieve-by-id'),
     path('users/get-by-email/<str:email>', views.UserRetrieveByEmailView.as_view(), name='user-retrieve-by-email'),
     path('users/update', views.UserUpdateView.as_view(), name='user-update-by-id'),
-    path('users/verify-email/<str:token>', views.VerifyEmailView.as_view(), name='verify-email'),
     path('users/update-role', views.UpdateRoleView.as_view(), name='update-role'),
-
 ]
