@@ -3,7 +3,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .serializers import UserSerializer, UserUpdateSerializer
-from user_management.models import User
+from user_management.models import User, Activity
 from utils.email_utils import send_verification_email
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -34,6 +34,14 @@ class UserRegistrationView(generics.CreateAPIView):
                 **serializer.data,
             }
         }
+        
+        #Log user registration activity
+        data = {
+            "user_id": user.id,
+            "ip_address": request.META.get('REMOTE_ADDR'),
+            "type": "user_registration"
+        }
+        Activity.objects.create(**data)
         
         #send verification email
         send_verification_email(user)
