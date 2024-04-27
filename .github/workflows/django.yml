@@ -14,15 +14,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
+        
+      - name: Install Pipenv
+        run: |
+          python -m pip install pipenv
+          
       - name: Install Python and Pipenv
         uses: actions/setup-python@v2
         with:
           python-version: 3.x
           pipenv: true
-      - name: Install Pipenv
-        run: |
-          python -m pip install pipenv
+          
       - name: Install dependencies
         run: |
           pipenv --python 3.9 install --deploy --ignore-pipfile
