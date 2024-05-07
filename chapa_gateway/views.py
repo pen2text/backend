@@ -43,13 +43,13 @@ class ChapaTransactionInitiateView(generics.CreateAPIView):
         )
         return Response(response, status=status.HTTP_200_OK)
         
-@csrf_exempt       
+# @csrf_exempt       
 class ChaPaTransactionVerifyView(generics.RetrieveAPIView):
     serializer_class = ChapaTransactionSerializer
     queryset = ChapaTransactions
     
     def get(self, request, *args, **kwargs):
-        instance = self.get_object()
+        instance = self.get_object()   
         response = Chapa.verify_payment(instance)
         return Response(response, status=status.HTTP_200_OK)
 
