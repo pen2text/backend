@@ -1,7 +1,7 @@
 from django.urls import path
 import user_management.views as views
 urlpatterns = [
-    path('users/register', views.UserRegistrationView.as_view(), name='user-registration'),
+    path('auth/register', views.UserRegistrationView.as_view(), name='user-registration'),
     path('users/delete/<uuid:id>', views.UserDeleteView.as_view(), name='user-delete-by-id'),
     path('users/get-all', views.UserListView.as_view(), name='user-list'),
     path('users/is-email-exists/<str:email>', views.CheckEmailExistsView.as_view(), name='check-email-exists'),

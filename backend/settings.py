@@ -58,7 +58,8 @@ INSTALLED_APPS = [
     'user_management',
     'authentication',
     'converter',
-    'premier',
+    'chapa_gateway',
+    'package_manager',
     'remote_handler',
     'conversion_management',
     'rest_framework',
@@ -251,3 +252,7 @@ LOGGING = {
         },
     },
 }
+
+# Chapa settings
+CHAPA_SECRET_KEY = os.environ.get('CHAPA_SECRET_KEY')
+CHAPA_CALLBACK_URL = os.environ.get('CHAPA_CALLBACK_URL')
