@@ -31,7 +31,7 @@ class Chapa:
             'first_name': transaction.first_name,
             'last_name': transaction.last_name,
             'tx_ref': transaction.id.__str__(),
-            'callback_url': CALLBACK_URL,
+            'callback_url': CALLBACK_URL + transaction.id.__str__(),
             # 'return_url': 'https://www.google.com/',
             'phone_number': transaction.phone_number,
             'customization': {
