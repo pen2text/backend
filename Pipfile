@@ -17,6 +17,7 @@ gunicorn = "*"
 whitenoise = "*"
 pillow = "*"
 cloudinary = "*"
+requests = "*"
 
 [dev-packages]
 

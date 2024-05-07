@@ -23,7 +23,7 @@ class CustomUserManager(BaseUserManager):
 
         return self.create_user(email, password, **extra_fields)
 
-class User(AbstractBaseUser):
+class Users(AbstractBaseUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     first_name = models.CharField(max_length=100, blank=False)
     last_name = models.CharField(max_length=100, blank=False)
@@ -39,7 +39,10 @@ class User(AbstractBaseUser):
     REQUIRED_FIELDS = []
 
     objects = CustomUserManager()
-
+    
+    class Meta:
+        db_table = 'users'
+        
     def __str__(self):
         return self.email
 
@@ -50,9 +53,13 @@ class User(AbstractBaseUser):
         return self.is_superuser
 
 
-class Activity(models.Model):
+class UserActivities(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user_id = models.UUIDField(null=True, blank=True)
     ip_address = models.GenericIPAddressField()
     type = models.CharField(max_length=100, blank=False)
     timestamp = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'user_activities'
+    

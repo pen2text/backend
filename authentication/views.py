@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.views import TokenObtainPairView
-from user_management.models import User
+from user_management.models import Users
 from utils.email_utils import send_reset_password_email
 from utils.jwt_token_utils import verify_token
 from utils.format_errors import validation_error
@@ -24,7 +24,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 class ForgotPasswordView(APIView):
-    queryset = User.objects.all()
+    queryset = Users.objects.all()
     lookup_field = 'email'
     def get(self, request, *args, **kwargs):
         user_email = self.kwargs.get('email')
@@ -37,7 +37,7 @@ class ForgotPasswordView(APIView):
         
         try:
             user = self.queryset.get(email = user_email)
-        except User.DoesNotExist:
+        except Users.DoesNotExist:
             response_data = {
                 "status": "FAILED",
                 "message": "User with this email does not exist",
@@ -74,7 +74,7 @@ class ResetPasswordView(APIView):
 
         try:
             user = verify_token(token, 'forgot_password')
-        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        except (TypeError, ValueError, OverflowError, Users.DoesNotExist):
             response_data = {
                     "status": "FAILED",
                     "message": "Invalid token",

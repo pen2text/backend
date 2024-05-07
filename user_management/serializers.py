@@ -1,13 +1,12 @@
 import re
 from rest_framework import serializers
-from .models import User
+from .models import Users
 from django.contrib.auth.hashers import make_password
-from django.core.exceptions import ValidationError
 
 class UserSerializer(serializers.ModelSerializer):
     
     class Meta:
-        model = User
+        model = Users
         fields = ('id', 'first_name', 'last_name', 'gender', 'date_of_birth', 'email', 'role', 'password', 'is_verified', 'created_at', 'updated_at')
         extra_kwargs = {
             'password': {'write_only': True}, 
@@ -40,7 +39,7 @@ class UserSerializer(serializers.ModelSerializer):
         return password
 
     def save(self, **kwargs):
-        user = User(
+        user = Users(
             email=self.validated_data['email'],
             first_name=self.validated_data.get('first_name', ''),
             last_name=self.validated_data.get('last_name', ''),
@@ -69,7 +68,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         return value
 
     class Meta:
-        model = User
+        model = Users
         fields = ('id', 'first_name', 'last_name', 'gender', 'date_of_birth', 'email', 'role', 'password', 'is_verified', 'created_at', 'updated_at')
         extra_kwargs = {
             'password': {'write_only': True}, 

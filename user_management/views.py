@@ -3,7 +3,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .serializers import UserSerializer, UserUpdateSerializer
-from user_management.models import User, Activity
+from user_management.models import Users, UserActivities
 from utils.email_utils import send_verification_email
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -41,7 +41,7 @@ class UserRegistrationView(generics.CreateAPIView):
             "ip_address": request.META.get('REMOTE_ADDR'),
             "type": "user_registration"
         }
-        Activity.objects.create(**data)
+        UserActivities.objects.create(**data)
         
         #send verification email
         send_verification_email(user)
@@ -52,7 +52,7 @@ class UserListView(generics.ListAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    queryset = User.objects.all()
+    queryset = Users.objects.all()
     serializer_class = UserSerializer
     def list(self, request, *args, **kwargs):
         user = request.user
@@ -76,7 +76,7 @@ class UserRetrieveByIdView(generics.RetrieveAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    queryset = User.objects.all()
+    queryset = Users.objects.all()
     serializer_class = UserSerializer
     lookup_field = 'id'
 
@@ -92,7 +92,7 @@ class UserRetrieveByIdView(generics.RetrieveAPIView):
         
         try:
             user = self.queryset.get(id=user_id)  
-        except User.DoesNotExist:
+        except Users.DoesNotExist:
             return Response({
                 "status": "FAILED",
                 "message": "User not found with the provided ID",
@@ -109,7 +109,7 @@ class UserRetrieveByEmailView(generics.RetrieveAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    queryset = User.objects.all()
+    queryset = Users.objects.all()
     serializer_class = UserSerializer
     lookup_field = 'email'
 
@@ -124,7 +124,7 @@ class UserRetrieveByEmailView(generics.RetrieveAPIView):
             return Response(response_data, status=status.HTTP_403_FORBIDDEN) 
         try:
             user = self.queryset.get(email=user_email)  
-        except User.DoesNotExist:
+        except Users.DoesNotExist:
             response_data = {
                 "status": "FAILED",
                 "message": "User not found with the provided email",
@@ -143,7 +143,7 @@ class UserDeleteView(generics.DestroyAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    queryset = User.objects.all()
+    queryset = Users.objects.all()
     serializer_class = UserSerializer
     lookup_field = 'id'
 
@@ -158,7 +158,7 @@ class UserDeleteView(generics.DestroyAPIView):
             return Response(response_data, status=status.HTTP_403_FORBIDDEN)
         try:
             user = self.queryset.get(id=user_id)  
-        except User.DoesNotExist:
+        except Users.DoesNotExist:
             response_data = {
                 "status": "FAILED",
                 "message": "User not found with the provided ID",
@@ -180,7 +180,7 @@ class CheckEmailExistsView(generics.GenericAPIView):
         if not user_email:
             return Response({'status': 'FAILED', 'message': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
     
-        user_exists = User.objects.filter(email=user_email).exists()
+        user_exists = Users.objects.filter(email=user_email).exists()
         response_data = {
             "status": "OK",
             "message": "Email existence checked successfully",               
@@ -218,8 +218,8 @@ class UpdateRoleView(APIView):
             return Response(response_data, status=status.HTTP_403_FORBIDDEN)
         
         try:
-            user = User.objects.get(id=user_id)
-        except User.DoesNotExist:
+            user = Users.objects.get(id=user_id)
+        except Users.DoesNotExist:
             response_data = {
                 "status": "FAILED", 
                 "message": "User does not exist", 
@@ -240,7 +240,7 @@ class UserUpdateView(generics.UpdateAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    queryset = User.objects.all()
+    queryset = Users.objects.all()
     serializer_class = UserUpdateSerializer
 
     def update(self, request, *args, **kwargs):
@@ -302,6 +302,6 @@ class UserUpdateView(generics.UpdateAPIView):
             raise BadRequest("ID not provided in the request data.")
         
         try:
-            return User.objects.get(id=user_id)
-        except User.DoesNotExist:
+            return Users.objects.get(id=user_id)
+        except Users.DoesNotExist:
             raise NotFound("User doesn't found!")

@@ -1,12 +1,12 @@
 from rest_framework import serializers
-from .models import ConversionHistory
+from .models import ConversionHistories
 from utils.upload_to_cloudinary import upload_image
 
 class ConversionHistorySerializer(serializers.ModelSerializer):
     image_file = serializers.ImageField(write_only=True)
 
     class Meta:
-        model = ConversionHistory
+        model = ConversionHistories
         fields = ('id', 'image_file', 'text_content', 'image_url', 'created_at', 'updated_at')
         extra_kwargs = {
             'id': {'read_only': True},
@@ -26,7 +26,7 @@ class ConversionHistoryUpdateSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField()
     
     class Meta:
-        model = ConversionHistory
+        model = ConversionHistories
         fields = ('id', 'user', 'text_content', 'image_url', 'created_at', 'updated_at')
         extra_kwargs = {
             'user': {'read_only': True},
@@ -34,4 +34,3 @@ class ConversionHistoryUpdateSerializer(serializers.ModelSerializer):
             'created_at': {'read_only': True},
             'updated_at': {'read_only': True},
         }
-        

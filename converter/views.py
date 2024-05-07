@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import generics
-from user_management.models import Activity
+from user_management.models import UserActivities
 from .serializers import ConverterSerializer
 from utils.format_errors import validation_error
 
@@ -39,7 +39,7 @@ class ConverterView(generics.GenericAPIView):
         #     "ip_address": request.META.get('REMOTE_ADDR'),
         #     "type": "user_conversion"
         # }
-        # Activity.objects.create(**data)
+        # UserActivities.objects.create(**data)
           
         return Response(response_data, status=status.HTTP_200_OK)
 
@@ -77,6 +77,6 @@ class ConvertUsingRemoteAPIView(generics.GenericAPIView):
         #     "ip_address": request.META.get('REMOTE_ADDR'),
         #     "type": "server_conversion"
         # }
-        # Activity.objects.create(**data)
+        # UserActivities.objects.create(**data)
         
         return Response(response_data, status=status.HTTP_200_OK)
