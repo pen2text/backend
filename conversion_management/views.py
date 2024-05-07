@@ -1,7 +1,6 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
-from exception.badRequest import BadRequest
-from .models import ConversionHistory
+from .models import ConversionHistories
 from .serializers import ConversionHistorySerializer, ConversionHistoryUpdateSerializer
 from utils.format_errors import validation_error
 from rest_framework.permissions import IsAuthenticated
@@ -12,7 +11,7 @@ class ConversionHistoryListView(generics.ListAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    queryset = ConversionHistory.objects.all()
+    queryset = ConversionHistories.objects.all()
     serializer_class = ConversionHistorySerializer
     
     def get(self, request, *args, **kwargs):
@@ -30,7 +29,7 @@ class ConversionHistoryRetrieveByIdView(generics.RetrieveAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    queryset = ConversionHistory.objects.all()
+    queryset = ConversionHistories.objects.all()
     serializer_class = ConversionHistorySerializer
     lookup_field = 'id'
     
@@ -40,7 +39,7 @@ class ConversionHistoryRetrieveByIdView(generics.RetrieveAPIView):
         
         try:
             conversion = self.queryset.get(id=conversion_id, user=user)
-        except ConversionHistory.DoesNotExist:
+        except ConversionHistories.DoesNotExist:
             response_data = {
                 'status': 'FAILED',
                 'message': 'Conversion History Not Found',
@@ -59,7 +58,7 @@ class ConversionHistoryDeleteView(generics.DestroyAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    queryset = ConversionHistory.objects.all()
+    queryset = ConversionHistories.objects.all()
     serializer_class = ConversionHistorySerializer
     lookup_field = 'id'
     
@@ -69,7 +68,7 @@ class ConversionHistoryDeleteView(generics.DestroyAPIView):
         
         try:
             conversion = self.queryset.get(id=conversion_id, user=user)
-        except ConversionHistory.DoesNotExist:
+        except ConversionHistories.DoesNotExist:
             response_data = {
                 'status': 'FAILED',
                 'message': 'Conversion History Not Found',
@@ -87,7 +86,7 @@ class ConversionHistoryUpdateView(generics.UpdateAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    queryset = ConversionHistory.objects.all()
+    queryset = ConversionHistories.objects.all()
     serializer_class = ConversionHistoryUpdateSerializer
     
     def put(self, request, *args, **kwargs):
@@ -102,7 +101,7 @@ class ConversionHistoryUpdateView(generics.UpdateAPIView):
         
         try:
             isinstance = self.queryset.get(id=conversion_id, user=user)
-        except ConversionHistory.DoesNotExist:
+        except ConversionHistories.DoesNotExist:
             response_data = {
                 'status': 'FAILED',
                 'message': 'Conversion History Not Found',
@@ -130,7 +129,7 @@ class ConversionHistoryCreateView(generics.CreateAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    queryset = ConversionHistory.objects.all()
+    queryset = ConversionHistories.objects.all()
     serializer_class = ConversionHistorySerializer
     
     def post(self, request, *args, **kwargs):

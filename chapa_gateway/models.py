@@ -7,7 +7,7 @@ class ChapaStatus(models.TextChoices):
     SUCCESS = 'success', 'SUCCESS'
     FAILED = 'failed', 'FAILED'
 
-class ChapaTransaction(models.Model):
+class ChapaTransactions(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     amount = models.FloatField(default=0.0)
     currency = models.CharField(max_length=25, default='ETB')
@@ -22,3 +22,6 @@ class ChapaTransaction(models.Model):
     response_dump = models.JSONField(default=dict, blank=True)  # incase the response is valuable in the future
     checkout_url = models.URLField(null=True, blank=True)
     
+    class Meta:
+        db_table = 'chapa_transactions'
+        

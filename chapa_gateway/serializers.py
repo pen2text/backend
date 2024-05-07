@@ -18,7 +18,7 @@ class ChapaTransactionSerializer(serializers.ModelSerializer):
     package = PackageSerializer()
     
     class Meta:
-        model = models.ChapaTransaction
+        model = models.ChapaTransactions
         fields = ['id', 'amount', 'currency', 'email', 'phone_number', 'first_name', 'last_name', 'payment_title', 'description', 'package']
         kwargs = {
             'id': {'read_only': True},
@@ -33,7 +33,7 @@ class ChapaTransactionSerializer(serializers.ModelSerializer):
         }
         
     def create(self, validated_data):
-        return models.ChapaTransaction.objects.create(**validated_data)
+        return models.ChapaTransactions.objects.create(**validated_data)
     
     def update(self, instance, validated_data):
         instance.status = validated_data.get('status', instance.status)

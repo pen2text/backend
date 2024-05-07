@@ -33,7 +33,7 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-AUTH_USER_MODEL = 'user_management.User'
+AUTH_USER_MODEL = 'user_management.Users'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').replace("'", "").split()
 

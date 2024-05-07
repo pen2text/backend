@@ -2,7 +2,7 @@ from rest_framework import status, generics
 from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
 from utils.chapa_utils import Chapa
-from .models import ChapaTransaction
+from .models import ChapaTransactions
 from .serializers import ChapaTransactionSerializer
 from utils.format_errors import validation_error
 from package_manager.models import PackagePlanDetails, TempSubscriptionPlans
@@ -46,7 +46,7 @@ class ChapaTransactionInitiateView(generics.CreateAPIView):
 @csrf_exempt       
 class ChaPaTransactionVerifyView(generics.RetrieveAPIView):
     serializer_class = ChapaTransactionSerializer
-    queryset = ChapaTransaction
+    queryset = ChapaTransactions
     
     def get(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -55,7 +55,7 @@ class ChaPaTransactionVerifyView(generics.RetrieveAPIView):
 
 @csrf_exempt
 class ChapaWebhookView(generics.CreateAPIView):
-    queryset = ChapaTransaction
+    queryset = ChapaTransactions
     def post(self, request, *args, **kwargs):
         data = request.data
         try:
@@ -64,7 +64,7 @@ class ChapaWebhookView(generics.CreateAPIView):
             transaction_instance.response_dump = data
             transaction_instance.save()
             return Response(data, status=status.HTTP_200_OK)
-        except ChapaTransaction.DoesNotExist:
+        except ChapaTransactions.DoesNotExist:
             return Response(
                 {
                     'error': "Invalid Transaction"

@@ -1,6 +1,6 @@
 from rest_framework import status, generics
 from rest_framework.response import Response
-from .models import RemoteAPITokenManager
+from .models import RemoteAPITokenManagers
 from .serializers import RemoteAPITokenManagerSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -42,7 +42,7 @@ class RemoteAPITokenManagerListView(generics.ListAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    queryset = RemoteAPITokenManager.objects.all()
+    queryset = RemoteAPITokenManagers.objects.all()
     serializer_class = RemoteAPITokenManagerSerializer
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset().filter(user=request.user)
@@ -59,7 +59,7 @@ class RemoteAPITokenManagerDeleteView(generics.DestroyAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    queryset = RemoteAPITokenManager.objects.all()
+    queryset = RemoteAPITokenManagers.objects.all()
     serializer_class = RemoteAPITokenManagerSerializer
     lookup_field = 'id'
     def delete(self, request, *args, **kwargs):
@@ -67,7 +67,7 @@ class RemoteAPITokenManagerDeleteView(generics.DestroyAPIView):
         token_id = kwargs.get('id')
         try:
             token = self.queryset.get(id=token_id, user=user)
-        except RemoteAPITokenManager.DoesNotExist:
+        except RemoteAPITokenManagers.DoesNotExist:
             response_data = {
                 'status': 'FAILED',
                 'message': 'Remote API Token Not Found',

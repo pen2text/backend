@@ -2,13 +2,13 @@ from rest_framework import serializers, status
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-from user_management.models import User
+from user_management.models import Users
 from utils.email_utils import send_email
 from utils.jwt_token_utils import generate_jwt_token, verify_token
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
+        model = Users
         fields = ('id', 'username', 'email')
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -70,7 +70,7 @@ class ResetPasswordSerializer(serializers.ModelSerializer):
     token = serializers.CharField(required=True)
     password = serializers.CharField(required=True)
     class Meta:
-        model = User
+        model = Users
         fields = ['token', 'password']
     
 

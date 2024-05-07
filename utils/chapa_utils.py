@@ -22,7 +22,7 @@ class Chapa:
         }
 
     @classmethod
-    def initialize_transaction(cls, transaction: models.ChapaTransaction) -> dict:
+    def initialize_transaction(cls, transaction: models.ChapaTransactions) -> dict:
         
         data = {
             'amount': transaction.amount,
@@ -52,7 +52,7 @@ class Chapa:
         return data
     
     @classmethod
-    def verify_payment(cls, transaction: models.ChapaTransaction) -> dict:
+    def verify_payment(cls, transaction: models.ChapaTransactions) -> dict:
         verify_url = "https://api.chapa.co/v1/transaction/verify/" + transaction.id.__str__()
         # payload = ''
         response = requests.get(verify_url, headers=cls.get_headers(),)
@@ -67,7 +67,7 @@ class Chapa:
         return data
         
         
-def create_premier_plan(temp_subscription: TempSubscriptionPlans, chapa_transaction: models.ChapaTransaction):
+def create_premier_plan(temp_subscription: TempSubscriptionPlans, chapa_transaction: models.ChapaTransactions):
     
     expire_date = timezone.now() + timedelta(days=temp_subscription.package_detail.days)
     user = temp_subscription.user
