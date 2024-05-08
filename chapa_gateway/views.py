@@ -49,7 +49,15 @@ class ChaPaTransactionVerifyView(generics.RetrieveAPIView):
     queryset = ChapaTransactions
     
     def get(self, request, *args, **kwargs):
-        instance = self.get_object()   
+        instance = self.get_object()
+        if instance.status == 'success':
+            return Response(
+                {
+                    'status': 'success',
+                    'message': 'Transaction already verified'
+                },
+                status=status.HTTP_200_OK
+            )  
         response = Chapa.verify_payment(instance)
         return Response(response, status=status.HTTP_200_OK)
 
