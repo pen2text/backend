@@ -87,7 +87,7 @@ def create_premier_plan(temp_subscription: TempSubscriptionPlans, chapa_transact
             package_plan= temp_subscription.package_detail,
             expire_date= expire_date
         )
-    elif temp_subscription.package_detail.plan_type == PlanType.NON_EXPIRING:
+    elif temp_subscription.package_detail.plan_type == PlanType.NON_EXPIRING_LIMITED_USAGE:
         UnlimitedUsageSubscriptionPlans.objects.create(
             user= user,
             transaction= chapa_transaction,
