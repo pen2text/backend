@@ -26,9 +26,9 @@ class UserAccessRecords(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(Users, on_delete=models.CASCADE, null=True)
     ip_address = models.CharField(max_length=50)
-    usage_limit = models.IntegerField(default=0)
     usage_count = models.IntegerField(default=0)
-    expire_date = models.DateTimeField()
+    package_plan = models.ForeignKey(PackagePlanDetails, on_delete=models.CASCADE)
+    last_date_use = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -39,8 +39,8 @@ class UnlimitedUsageSubscriptionPlans(models.Model):
     user = models.ForeignKey(Users, on_delete=models.CASCADE)
     package_plan = models.ForeignKey(PackagePlanDetails, on_delete=models.CASCADE)
     transaction = models.OneToOneField(ChapaTransactions, on_delete=models.CASCADE)
-    expire_date = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
+    # expire_date = models.DateTimeField()
     
     class Meta:
         db_table = 'unlimited_usage_subscription_plans'
@@ -49,11 +49,11 @@ class LimitedUsageSubscriptionPlans(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(Users, on_delete=models.CASCADE)
     package_detail = models.ForeignKey(PackagePlanDetails, on_delete=models.CASCADE)
-    usage_limit = models.IntegerField(default=0)
     transaction = models.OneToOneField(ChapaTransactions, on_delete=models.CASCADE)
     usage_count = models.IntegerField(default=0)
-    expire_date = models.DateTimeField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    # expire_date = models.DateTimeField(null=True)
+    # usage_limit = models.IntegerField(default=0)
     
     class Meta:
         db_table = 'limited_usage_subscription_plans'

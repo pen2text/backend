@@ -3,7 +3,7 @@ from utils.jwt_token_utils import verify_token
 
 class ConverterSerializer(serializers.Serializer):
     index = serializers.IntegerField()
-    image = serializers.ImageField()
+    # image = serializers.ImageField()
     
     class Meta:
         fields = ['index', 'image', 'text-content', 'state']
