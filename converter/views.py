@@ -4,6 +4,7 @@ from rest_framework import generics
 from user_management.models import UserActivities
 from .serializers import ConverterSerializer
 from utils.format_errors import validation_error
+from utils.check_access_utils import check_access
 
 class ConverterView(generics.GenericAPIView):
     serializer_class = ConverterSerializer
@@ -23,6 +24,10 @@ class ConverterView(generics.GenericAPIView):
             'message': 'Image processed',
             'data': []
         }
+        
+           
+        result = check_access(request.user, request.META.get('REMOTE_ADDR'))
+        print(result)
         
         # for index, image in serializer.validated_data:
         #     #process image call ml model
@@ -62,6 +67,8 @@ class ConvertUsingRemoteAPIView(generics.GenericAPIView):
             'data': []
         }
         
+        result = check_access(request.user, request.META.get('REMOTE_ADDR'))
+
         # for index, image in serializer.validated_data:
         #     #process image call ml model
             

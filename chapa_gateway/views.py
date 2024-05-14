@@ -2,6 +2,7 @@ from rest_framework import status, generics
 from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
 from utils.chapa_utils import Chapa
+from utils.check_access_utils import isUserHasPackage
 from .models import ChapaTransactions
 from .serializers import ChapaTransactionSerializer
 from utils.format_errors import validation_error
@@ -25,6 +26,13 @@ class ChapaTransactionInitiateView(generics.CreateAPIView):
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         
+        if isUserHasPackage(request.user):
+            response_data = {
+                'status': 'FAILED',
+                'message': 'User already has a package'
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+            
         package = serializer.validated_data.pop('package')
         instance = serializer.save()
         response = Chapa.initialize_transaction(instance)
