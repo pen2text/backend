@@ -6,13 +6,13 @@ import uuid
 class PlanType(models.TextChoices):
     UNLIMITED_USAGE = 'unlimited_usage', 'UNLIMITED_USAGE'
     LIMITED_USAGE = 'limited_usage', 'LIMITED_USAGE'
-    NON_EXPIRING = 'non_expiring', 'NON_EXPIRING'
-    
+    NON_EXPIRING_LIMITED_USAGE = 'non_expiring_limited_usage', 'NON_EXPIRING_LIMITED_USAGE'
+    CUSTOM_LIMITED_USAGE = 'custom_limited_usage', 'CUSTOM_LIMITED_USAGE'
 
 class PackagePlanDetails(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=20)
-    plan_type = models.CharField(max_length=20, choices=PlanType.choices)
+    plan_type = models.CharField(max_length=30, choices=PlanType.choices)
     usage_limit = models.IntegerField(default=0)
     price = models.FloatField(default=0.0)
     days = models.IntegerField(default=0)
@@ -52,8 +52,8 @@ class LimitedUsageSubscriptionPlans(models.Model):
     transaction = models.OneToOneField(ChapaTransactions, on_delete=models.CASCADE)
     usage_count = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+    usage_limit = models.IntegerField(default=0)
     # expire_date = models.DateTimeField(null=True)
-    # usage_limit = models.IntegerField(default=0)
     
     class Meta:
         db_table = 'limited_usage_subscription_plans'

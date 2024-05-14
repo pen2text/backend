@@ -9,6 +9,9 @@ from django.utils import timezone
 #     'plan_type': PlanType.LIMITED_USAGE,
 # }
 
+def check_cusom_limited_usage_access(user: Users) -> bool:
+    pass
+
 def check_free_registered_access(user: Users, ip_address) -> bool:
  
     user_record = UserAccessRecords.objects.filter(ip_address=ip_address, user=user).first()
@@ -87,7 +90,7 @@ def check_limited_usage_access(user: Users) -> bool:
     except LimitedUsageSubscriptionPlans.DoesNotExist:
         return False, PlanType.LIMITED_USAGE, 0
     
-    if limited_package.package_detail.plan_type == PlanType.NON_EXPIRING:
+    if limited_package.package_detail.plan_type == PlanType.NON_EXPIRING_LIMITED_USAGE:
         if limited_package.usage_count >= limited_package.package_detail.usage_limit:
             return False, PlanType.LIMITED_USAGE, 0
         return True, PlanType.LIMITED_USAGE, limited_package.package_detail.usage_limit - limited_package.usage_count
