@@ -20,14 +20,13 @@ schema_view = get_schema_view(
 )
 
   
-   
-
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('user_management.urls')),
     path('api/', include('authentication.urls')),
     path('api/', include('package_manager.urls')),
     path('api/', include('converter.urls')),
+    path('api/', include('admin_config.urls')),
     path('api/', include('chapa_gateway.urls')),
     path('api/', include('remote_handler.urls')),
     path('api/', include('conversion_management.urls')),

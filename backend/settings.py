@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'chapa_gateway',
     'package_manager',
     'remote_handler',
+    'admin_config',
     'conversion_management',
     'rest_framework',
     'rest_framework_simplejwt',
