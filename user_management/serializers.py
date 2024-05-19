@@ -3,6 +3,7 @@ from rest_framework import serializers
 from .models import Users
 from django.contrib.auth.hashers import make_password
 
+
 class UserSerializer(serializers.ModelSerializer):
     
     class Meta:
@@ -36,52 +37,87 @@ class UserSerializer(serializers.ModelSerializer):
         if errors:
             raise serializers.ValidationError(errors)
             
-        return password
+        return make_password(password)
 
-    def save(self, **kwargs):
-        user = Users(
-            email=self.validated_data['email'],
-            first_name=self.validated_data.get('first_name', ''),
-            last_name=self.validated_data.get('last_name', ''),
-            gender=self.validated_data.get('gender', ''),
-            date_of_birth=self.validated_data.get('date_of_birth', ''),
-        )
-        
-        # Set and hash the password
-        user.set_password(self.validated_data['password'])
-        user.save()
-        return user
-
-class UserUpdateSerializer(serializers.ModelSerializer):
+class UserUpdateSerializer(UserSerializer):
     id = serializers.UUIDField()
-    date_of_birth = serializers.DateField()
-
-    def validate_gender(self, value):
-        if value.lower() not in ['male', 'female']:
-            raise serializers.ValidationError("Invalid value for gender field.")
-        return value
-
-    def validate_password(self, value):
-        if value:
-            if not re.match(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,30}$', value):
-                raise serializers.ValidationError("Password must contain at least one lowercase letter, one uppercase letter, one digit, one special character, and be between 8 and 30 characters long.")
-        return value
-
-    class Meta:
-        model = Users
-        fields = ('id', 'first_name', 'last_name', 'gender', 'date_of_birth', 'email', 'role', 'password', 'is_verified', 'created_at', 'updated_at')
+    old_password = serializers.CharField(write_only=True, required=False, allow_blank=True, allow_null=True)
+       
+    def validate_password(self, password):
+        password = password.strip()
+        if not password: 
+            return password
+        
+        errors = []   
+        
+        if len(password) < 8:
+            errors.append("Password must be at least 8 characters long.")
+        if not re.search(r'[a-z]', password):
+            errors.append("Password must contain at least one lower-case letter.")
+        if not re.search(r'[A-Z]', password):
+            errors.append("Password must contain at least one upper-case letter.")
+        if not re.search(r'[0-9]', password):
+            errors.append("Password must contain at least one digit.")
+        if not re.search(r'[@_!#$%^&*()<>?/\|}{~:=+-.,\[\]]', password):
+            errors.append("Password must contain at least one special character.")
+        if errors:
+            raise serializers.ValidationError(errors)        
+            
+        return make_password(password)
+    
+    def validate_old_password(self, old_password):
+        if not 'password' in self.initial_data or not self.initial_data['password'].strip():
+            return old_password
+        
+        if not old_password:
+            raise serializers.ValidationError("Old password is required when updating password.")
+        
+        if not self.instance.check_password(old_password):
+            raise serializers.ValidationError("Old password is incorrect.")
+        
+        return old_password
+        
+    class Meta(UserSerializer.Meta):
+        fields = ('id', 'first_name', 'last_name', 'gender', 'date_of_birth', 'email', 'role', 'password', 'old_password', 'is_verified', 'created_at', 'updated_at')
         extra_kwargs = {
-            'password': {'write_only': True}, 
-            'is_verified': {'read_only': True},  
-            'role': {'read_only': True},  
-            'email': {'read_only': True},  
+            'password': {'required': False, 'write_only': True, 'allow_blank': True, 'allow_null': True},
+            'role': {'read_only': True},
+            'is_verified': {'read_only': True},
+            'email': {'read_only': True},
         }
+        
+    def update(self, instance, validated_data):
+        instance.first_name = validated_data.get('first_name', instance.first_name)
+        instance.last_name = validated_data.get('last_name', instance.last_name)
+        instance.date_of_birth = validated_data.get('date_of_birth', instance.date_of_birth)
+        instance.gender = validated_data.get('gender', instance.gender)
+        
+        if 'password' in validated_data and validated_data['password']:
+            instance.set_password(validated_data['password'])
+        instance.save()
+        return instance
+
+class RoleSerializer(UserSerializer):
+    id = serializers.UUIDField()
+    role = serializers.CharField()
+    
+    def validate_role(self, role):
+        if role.lower() not in ['admin', 'user']:
+            raise serializers.ValidationError("Invalid value for role field.")
+        return role.lower()
+    
+    def validate_id(self, id):
+        if id == self.context['request'].user.id:
+            raise serializers.ValidationError("You cannot change your own role.")
+        
+        return id
+    
+    class Meta(UserSerializer.Meta):
+        fields = ('id', 'role')
+        
 
     def update(self, instance, validated_data):
-        if 'password' not in validated_data:
-            validated_data['password'] = instance.password
-        else:
-            validated_data['password'] = make_password(validated_data['password'])
-        return super().update(instance, validated_data)
-
-
+        instance.role = validated_data.get('role', instance.role)
+        instance.save()
+        return instance
+    
