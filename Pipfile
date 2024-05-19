@@ -18,6 +18,9 @@ whitenoise = "*"
 pillow = "*"
 cloudinary = "*"
 requests = "*"
+pytest-mock = "*"
+pytest-django = "*"
+pytest = "*"
 
 [dev-packages]
 
