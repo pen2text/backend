@@ -20,7 +20,7 @@
 #         response = api_client.get(url)
 
 #         assert response.status_code == status.HTTP_404_NOT_FOUND
-#         assert response.data['status'] == 'FAILED'
+#         assert response.data['status'] == 'OK'
 #         assert response.data['message'] == 'Email does not exists'
 
 #     def test_check_with_out_email(self, api_client):
@@ -37,5 +37,5 @@
 #         response = api_client.get(url)
 
 #         assert response.status_code == status.HTTP_404_NOT_FOUND
-#         assert response.data['status'] == 'FAILED'
+#         assert response.data['status'] == 'OK'
 #         assert response.data['message'] == 'Email does not exists'
