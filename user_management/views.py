@@ -1,5 +1,4 @@
 from rest_framework import generics, status
-from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .serializers import UserSerializer, UserUpdateSerializer
@@ -7,7 +6,6 @@ from user_management.models import Users, UserActivities
 from utils.email_utils import send_verification_email
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from exception.badRequest import BadRequest
 from utils.format_errors import validation_error
 
 class UserRegistrationView(generics.CreateAPIView):
@@ -177,14 +175,27 @@ class CheckEmailExistsView(generics.GenericAPIView):
     
     def get(self, request, *args, **kwargs):
         user_email = self.kwargs.get('email')    
-        if not user_email or user_email.isspace():
-            return Response({'status': 'FAILED', 'message': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
-
+        if not user_email:
+            response_data = {
+                "status": "FAILED",
+                "message": "Email is required",
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        
         try:
-            Users.objects.get(email=user_email)
-            return Response({'status': 'OK', 'message': 'Email exists'}, status=status.HTTP_200_OK)
+            user_email = Users.objects.get(email=user_email)
         except Users.DoesNotExist:
-            return Response({'status': 'FAILED', 'message': 'Email does not exists'}, status=status.HTTP_404_NOT_FOUND)
+            response_data = {
+                "status": "OK",
+                "message": "Email does not exist",
+            }
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+        response_data = {
+            "status": "OK",
+            "message": "Email exists",
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
 
 class UpdateRoleView(APIView):
     authentication_classes = [JWTAuthentication]
@@ -237,47 +248,33 @@ class UserUpdateView(generics.UpdateAPIView):
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
-
-        try:
-            instance = self.get_object()
-        except NotFound as e:
-            response_data = {
-                'status': 'FAILED', 
-                'message': str(e),
-            }
-            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
-        except BadRequest as e:
-            response_data = {
-                'status': 'FAILED', 
-                'message': str(e),
-            }
-            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
-
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
         
         try:
-            serializer.is_valid(raise_exception=True)
-        except ValidationError as e:
+            user = self.queryset.get(id=request.data.get('id'))
+        except Users.DoesNotExist:
+            response_data = {
+                'status': 'FAILED', 
+                'message': "User not found with the provided ID",
+            }
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.get_serializer(user, data=request.data, partial=partial)
+        if not serializer.is_valid():
             response_data = {
                 'status': 'FAILED',
                 'message': 'Validation failed',
-                'errors': validation_error(e.detail)
+                'errors': validation_error(serializer.errors)
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
-        user = request.user
-        if user.role != 'user' or user.id != serializer.validated_data['id']:
+        if request.user.role != 'user' or request.user.id != user.id:
             response_data = {
                 "status": "FAILED",
                 "message": "Forbidden: You do not have permission to update this user's information",
             }
-            return Response(response_data, status=status.HTTP_403_FORBIDDEN)
+            return Response(response_data, status=status.HTTP_403_FORBIDDEN)        
+        
 
-        # If password is not provided or empty, retain the existing password
-        if 'password' in request.data and not request.data['password']: 
-            serializer.validated_data.pop('password')
-
-        serializer.validated_data['gender'] = serializer.validated_data['gender'].lower()
         self.perform_update(serializer)
         
         response_data = {
@@ -286,14 +283,3 @@ class UserUpdateView(generics.UpdateAPIView):
             "data": serializer.data,
         }
         return Response(response_data, status=status.HTTP_200_OK)
-
-    def get_object(self):
-        user_id = self.request.data.get('id')
-        
-        if user_id is None:
-            raise BadRequest("ID not provided in the request data.")
-        
-        try:
-            return Users.objects.get(id=user_id)
-        except Users.DoesNotExist:
-            raise NotFound("User doesn't found!")
