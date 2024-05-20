@@ -12,6 +12,13 @@ class UserRegistrationView(generics.CreateAPIView):
     serializer_class = UserSerializer
 
     def post(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            response_data = {
+                "status": "FAILED",
+                "message": "Forbidden: You are already logged in",
+            }
+            return Response(response_data, status=status.HTTP_403_FORBIDDEN)
+        
         serializer = self.get_serializer(data=request.data)
         
         if not serializer.is_valid():

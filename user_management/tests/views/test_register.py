@@ -1,116 +1,66 @@
-# import pytest
-# from django.urls import reverse
-# from rest_framework import status
-# from unittest.mock import patch, Mock
+import pytest
+from rest_framework import status
+from django.urls import reverse
 
-
-# @pytest.fixture
-# def register_url():
-#     return reverse('user-register')
-
-# @pytest.mark.django_db
-# def test_user_registration_success(api_client, register_url, mock_user_serializer_save, mock_send_verification_email):
-#     data = {
-#         'id': '123e4567-e89b-12d3-a456-426614174000',
-#         'first_name': 'John',
-#         'last_name': 'Doe',
-#         'gender': 'Male',
-#         'date_of_birth': '2024-05-17',
-#         'email': 'mie.jejaw@gmail.com',
-#         'password': 'Mieraf1234!',
-#         'is_verified': False,
-#         'role': 'user',
-#         'created_at': '2024-05-17T00:00:00Z',
-#         'updated_at': '2024-05-17T00:00:00Z'
-#     }
-#     mock_response = Mock(**data)
-#     mock_user_serializer_save.return_value = mock_response
+@pytest.mark.django_db
+class TestUserRegistrationView:
     
-#     user = {
-#         'first_name': 'John',
-#         'last_name': 'Doe',
-#         'gender': 'Male',
-#         'date_of_birth': '2024-05-17',
-#         'email': 'mie.jejaw@gmail.com',
-#         'password': 'Mieraf1234!'
-#     }
+    def test_logged_in_user_registration_forbidden(self, api_client, mock_token, users):
+        logged_in_user = users[0] 
+        token = mock_token(logged_in_user)
+        api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
 
-#     response = api_client.post(register_url, user, format='json')
+        url = reverse('user-register')
+        data = {
+            'first_name': 'New',
+            'last_name': 'User',
+            'gender': 'female',
+            'date_of_birth': '1995-05-20',
+            'email': 'new.user@example.com',
+            'password': 'NewUser123!',
+        }
+        
+        response = api_client.post(url, data, format='json')
 
-#     mock_user_serializer_save.assert_called_once()
-#     mock_send_verification_email.assert_called_once_with(mock_response)
-    
-#     print(response.json())
-#     assert response.status_code == status.HTTP_201_CREATED
-#     assert response.json()['status'] == 'OK'
-#     assert response.json()['message'] == 'User registered successfully'
-#     assert response.json()['data']['id'] == mock_response.id
-#     assert 'password' not in response.json()['data']
-    
-    
-# @pytest.mark.django_db
-# def test_user_registration_validation_failure(api_client, register_url):
-#     data = {
-#         'first_name': 'John',
-#         'last_name': 'Doe',
-#         'gender': 'Male',
-#         'date_of_birth': '2024-05-17',
-#         'email': 'example@gmail.com'
-#     }
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data['status'] == 'FAILED'
+        assert response.data['message'] == 'Forbidden: You are already logged in'
 
-#     response = api_client.post(register_url, data, format='json')
+    def test_anonymous_user_registration(self, api_client, mock_send_verification_email):
+        url = reverse('user-register')
+        data = {
+            'first_name': 'New',
+            'last_name': 'User',
+            'gender': 'female',
+            'date_of_birth': '1995-05-20',
+            'email': 'new.user@example.com',
+            'password': 'NewUser123!',
+        }
+        
+        response = api_client.post(url, data, format='json')
 
-#     assert response.status_code == status.HTTP_400_BAD_REQUEST
-#     response_data = response.json()
-#     assert response_data['status'] == 'FAILED'
-#     assert response_data['message'] == 'Validation failed'
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data['status'] == 'OK'
+        assert response.data['message'] == 'User registered successfully'
+        assert 'id' in response.data['data']
 
-# # @pytest.mark.django_db
-# # def test_user_registration_user_already_logged_in(api_client, register_url):
-# #     # Simulate an authenticated user
-# #     request = api_client.post(reverse('user-login'), {'username': 'testuser', 'password': 'testpassword'}, format='json')
-# #     request.user = Mock(is_authenticated=True)
-    
-# #     user_data = {
-# #         'first_name': 'John',
-# #         'last_name': 'Doe',
-# #         'gender': 'Male',
-# #         'date_of_birth': '2024-05-17',
-# #         'email': 'mie.jejaw@gmail.com',
-# #         'password': 'Mieraf1234!'
-# #     }
+        mock_send_verification_email.assert_called_once()
 
-# #     # Encode the content_type properly
-# #     content_type = 'application/json'
-# #     request_content = json.dumps(user_data).encode('utf-8')
+    def test_anonymous_user_registration_validation_error(self, api_client):
+        url = reverse('user-register')
+        data = {
+            'first_name': '',
+            'last_name': 'User',
+            'gender': 'female',
+            'date_of_birth': '1995-05-20',
+            'email': 'invalid-email',
+            'password': 'short',
+        }
+        
+        response = api_client.post(url, data, format='json')
 
-# #     response = api_client.post(register_url, data=request_content, content_type=content_type)
-
-# #     assert response.status_code == 403
-# #     response_data = response.json()
-# #     assert response_data['status'] == 'FAILED'
-# #     assert response_data['message'] == 'Forbidden: You are already have an active session. Please logout to create a new user account.'
-
-
-
-# # @pytest.mark.django_db
-# # def test_user_registration_user_already_logged_in(api_client, register_url, mocker):
-# #     user = Mock(is_authenticated=True)
-# #     api_client.force_authenticate(user=user)
-    
-# #     user_data = {
-# #         'first_name': 'John',
-# #         'last_name': 'Doe',
-# #         'gender': 'Male',
-# #         'date_of_birth': '2024-05-17',
-# #         'email': 'mie.jejaw@gmail.com',
-# #         'password': 'Mieraf1234!'
-# #     }
-
-# #     response = api_client.post(register_url, user_data, format='json')
-
-# #     assert response.status_code == 403
-# #     response_data = response.json()
-# #     assert response_data['status'] == 'FAILED'
-# #     assert response_data['message'] == 'Forbidden: You are already have an active session. Please logout to create a new user account.'
-# #     api_client.force_authenticate(user=None) 
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.data['status'] == 'FAILED'
+        assert response.data['message'] == 'Validation failed'
+        assert 'errors' in response.data
+        assert 'first_name' in response.data['errors']

@@ -1,3 +1,4 @@
+import uuid
 import pytest
 from unittest.mock import patch
 from datetime import date
@@ -13,11 +14,6 @@ def api_client():
 @pytest.fixture
 def mock_send_verification_email():
     with patch('user_management.views.send_verification_email') as mock:
-        yield mock
-
-@pytest.fixture
-def mock_user_serializer_save():
-    with patch('user_management.serializers.UserSerializer.save') as mock:
         yield mock
 
 @pytest.fixture
@@ -69,3 +65,26 @@ def mock_token(mocker, users):
         return token
     return generate_token
 
+@pytest.fixture
+def mock_user_serializer_save(db):
+    def _create_user(*args, **kwargs):
+        user = Users(
+            first_name=kwargs.get('first_name', 'Test'),
+            last_name=kwargs.get('last_name', 'User'),
+            gender=kwargs.get('gender', 'female'),
+            date_of_birth=kwargs.get('date_of_birth', date(1995, 5, 20)),
+            email=kwargs.get('email', 'test.user@example.com'),
+            is_verified=kwargs.get('is_verified', False),
+            role=kwargs.get('role', 'user')
+        )
+        user.set_password(kwargs.get('password', 'TestUser123!'))
+        user.save()
+        return user
+    
+    with patch('user_management.serializers.UserSerializer.save', side_effect=_create_user) as mock:
+        yield mock
+        
+# @pytest.fixture
+# def mock_user_serializer_save():
+#     with patch('user_management.serializers.UserSerializer.save') as mock:
+#         yield mock
