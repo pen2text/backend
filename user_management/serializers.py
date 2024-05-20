@@ -1,7 +1,6 @@
 import re
 from rest_framework import serializers
 from .models import Users
-from django.contrib.auth.hashers import make_password
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -37,7 +36,13 @@ class UserSerializer(serializers.ModelSerializer):
         if errors:
             raise serializers.ValidationError(errors)
             
-        return make_password(password)
+        return password
+    
+    def save(self, **kwargs):
+        user = Users(**self.validated_data)
+        user.set_password(self.validated_data['password'])
+        user.save()
+        return user
 
 class UserUpdateSerializer(UserSerializer):
     id = serializers.UUIDField()
@@ -66,7 +71,7 @@ class UserUpdateSerializer(UserSerializer):
         if not 'old_password' in self.initial_data or not self.initial_data['old_password'].strip():
             raise serializers.ValidationError("Old password is required when updating password.")     
             
-        return make_password(password)
+        return password
     
     def validate_old_password(self, old_password):
         if not 'password' in self.initial_data or not self.initial_data['password'].strip():
