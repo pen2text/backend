@@ -61,7 +61,10 @@ class UserUpdateSerializer(UserSerializer):
         if not re.search(r'[@_!#$%^&*()<>?/\|}{~:=+-.,\[\]]', password):
             errors.append("Password must contain at least one special character.")
         if errors:
-            raise serializers.ValidationError(errors)        
+            raise serializers.ValidationError(errors)   
+        
+        if not 'old_password' in self.initial_data or not self.initial_data['old_password'].strip():
+            raise serializers.ValidationError("Old password is required when updating password.")     
             
         return make_password(password)
     
@@ -115,7 +118,6 @@ class RoleSerializer(UserSerializer):
     class Meta(UserSerializer.Meta):
         fields = ('id', 'role')
         
-
     def update(self, instance, validated_data):
         instance.role = validated_data.get('role', instance.role)
         instance.save()

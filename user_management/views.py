@@ -1,7 +1,7 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import UserSerializer, UserUpdateSerializer
+from .serializers import RoleSerializer, UserSerializer, UserUpdateSerializer
 from user_management.models import Users, UserActivities
 from utils.email_utils import send_verification_email
 from rest_framework.permissions import IsAuthenticated
@@ -12,6 +12,13 @@ class UserRegistrationView(generics.CreateAPIView):
     serializer_class = UserSerializer
 
     def post(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            response_data = {
+                "status": "FAILED",
+                "message": "Forbidden: You are already logged in",
+            }
+            return Response(response_data, status=status.HTTP_403_FORBIDDEN)
+        
         serializer = self.get_serializer(data=request.data)
         
         if not serializer.is_valid():
@@ -175,7 +182,7 @@ class CheckEmailExistsView(generics.GenericAPIView):
     
     def get(self, request, *args, **kwargs):
         user_email = self.kwargs.get('email')    
-        if not user_email:
+        if not user_email or user_email.isspace():
             response_data = {
                 "status": "FAILED",
                 "message": "Email is required",
@@ -187,7 +194,7 @@ class CheckEmailExistsView(generics.GenericAPIView):
         except Users.DoesNotExist:
             response_data = {
                 "status": "OK",
-                "message": "Email does not exist",
+                "message": "Email does not exists",
             }
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
 
@@ -201,19 +208,9 @@ class UpdateRoleView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
+    serializer_class = RoleSerializer
     def patch(self, request, format=None):
-        role = request.data.get('role', None)
-        user_id = request.data.get('id', None)
-        
-        if not role or not user_id:
-            response_data = {
-                "status": "FAILED", 
-                "message": "Both role and user_id must be provided", 
-            }
-            return Response(response_data, status = status.HTTP_400_BAD_REQUEST)
-        
-        user = request.user
-        if user.role != 'admin':
+        if request.user.role != 'admin':
             response_data = {
                 "status": "FAILED",
                 "message": "Forbidden: You do not have permission to update user roles",
@@ -221,6 +218,7 @@ class UpdateRoleView(APIView):
             return Response(response_data, status=status.HTTP_403_FORBIDDEN)
         
         try:
+            user_id = request.data.get('id')
             user = Users.objects.get(id=user_id)
         except Users.DoesNotExist:
             response_data = {
@@ -229,13 +227,23 @@ class UpdateRoleView(APIView):
             }
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
         
-        user.role = role 
-        user.save()
-        serializer = UserSerializer(user)
+        serializer = self.serializer_class(user, data=request.data, partial=True, context={'request': request})
+        
+        if not serializer.is_valid():
+            response_data = {
+                "status": "FAILED",
+                "message": "Validation failed",
+                "errors": validation_error(serializer.errors)
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        
+        self.update(serializer)
+        user = UserSerializer(user)
+
         response_data = {
             "status": "OK", 
             "message": "Role updated successfully", 
-            "data": serializer.validated_data, 
+            "data": serializer.data, 
         }
         return Response(response_data, status=status.HTTP_200_OK)
     
@@ -248,9 +256,17 @@ class UserUpdateView(generics.UpdateAPIView):
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
+        user_id = request.data.get('id')
         
+        if str(request.user.id) != str(user_id):
+            response_data = {
+                "status": "FAILED",
+                "message": "Forbidden: You do not have permission to update this user's information",
+            }
+            return Response(response_data, status=status.HTTP_403_FORBIDDEN)  
+
         try:
-            user = self.queryset.get(id=request.data.get('id'))
+            user = self.queryset.get(id=user_id)
         except Users.DoesNotExist:
             response_data = {
                 'status': 'FAILED', 
@@ -267,19 +283,10 @@ class UserUpdateView(generics.UpdateAPIView):
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
-        if request.user.role != 'user' or request.user.id != user.id:
-            response_data = {
-                "status": "FAILED",
-                "message": "Forbidden: You do not have permission to update this user's information",
-            }
-            return Response(response_data, status=status.HTTP_403_FORBIDDEN)        
-        
-
         self.perform_update(serializer)
-        
         response_data = {
             "status": "OK",
-            "message": "User updated successfully",
+            "message": "User information updated successfully",
             "data": serializer.data,
         }
         return Response(response_data, status=status.HTTP_200_OK)
