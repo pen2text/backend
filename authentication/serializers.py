@@ -37,11 +37,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         }
         return response_data
 
-class ResetPasswordSerializer(serializers.ModelSerializer):
+class ResetPasswordSerializer(serializers.Serializer):
     token = serializers.CharField(required=True)
     password = serializers.CharField(required=True)
-    class Meta:
-        model = Users
-        fields = ['token', 'password']
-    
-

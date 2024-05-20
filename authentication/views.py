@@ -26,11 +26,12 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 class ForgotPasswordView(APIView):
     queryset = Users.objects.all()
     lookup_field = 'email'
+    
     def get(self, request, *args, **kwargs):
         user_email = self.kwargs.get('email')
         if not user_email:
             response_data = {
-                "status": "OK",
+                "status": "FAILED",
                 "message": "Email is required",
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
@@ -44,20 +45,20 @@ class ForgotPasswordView(APIView):
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         
+        if not send_reset_password_email(user):
+            response_data["status"] = "FAILED"
+            response_data["message"] = "An error occurred while sending the email. Please try again later."
+            return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
         response_data = {
             "status": "OK",
             "message": "Password reset email has been sent",
         }
-        
-        #send password rest email
-        if not send_reset_password_email(user):
-            response_data["status"] = "FAILED"
-            response_data["message"] = "An error occurred while sending the email. Please try again later."
-        
-        return Response(response_data, status=response_data["code"])
+        return Response(response_data, status=status.HTTP_200_OK)
 
 class ResetPasswordView(APIView):
     serializer_class = ResetPasswordSerializer
+    
     def put(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         
@@ -73,11 +74,11 @@ class ResetPasswordView(APIView):
         password = serializer.validated_data.get('password')
 
         try:
-            user = verify_token(token, 'forgot_password')
+            user = verify_token(token, 'password_reset')
         except (TypeError, ValueError, OverflowError, Users.DoesNotExist):
             response_data = {
-                    "status": "FAILED",
-                    "message": "Invalid token",
+                "status": "FAILED",
+                "message": "Invalid token or expired token. Please request a new one.",
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 

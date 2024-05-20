@@ -4,7 +4,7 @@ import datetime
 from user_management.models import Users
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-def generate_jwt_token(payload, expiry_minutes=2):
+def generate_jwt_token(payload, expiry_minutes=5):
 
     # Calculate expiry time
     expiry_time = datetime.datetime.now() + datetime.timedelta(minutes=expiry_minutes)
