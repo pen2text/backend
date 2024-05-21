@@ -25,9 +25,9 @@ class ConverterView(generics.GenericAPIView):
             'data': []
         }
         
-           
-        result = check_access(request.user, request.META.get('REMOTE_ADDR'))
-        print(result)
+
+        # result = check_access(request.user, request.META.get('REMOTE_ADDR'))
+        # print(result)
         
         # for index, image in serializer.validated_data:
         #     #process image call ml model

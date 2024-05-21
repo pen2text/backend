@@ -27,5 +27,5 @@ def verify_token(token, token_type):
         if not user or token_type != decoded_token['token_type']:
             raise ValueError("Invalid token or token get expired")
         return user
-    except (jwt.ExpiredSignatureError or jwt.InvalidTokenError):
+    except:
         raise ValueError("Invalid token or token get expired")

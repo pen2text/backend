@@ -83,7 +83,9 @@ def mock_user_serializer_save(db):
     
     with patch('user_management.serializers.UserSerializer.save', side_effect=_create_user) as mock:
         yield mock
-        
+
+
+       
 # @pytest.fixture
 # def mock_user_serializer_save():
 #     with patch('user_management.serializers.UserSerializer.save') as mock:
