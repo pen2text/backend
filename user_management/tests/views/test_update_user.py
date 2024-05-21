@@ -62,11 +62,13 @@
 #             'old_password': 'JaneDoe123!'
 #         }
 #         response = api_client.patch(url, data, format='json')
+#         print(response)
 
 #         assert response.status_code == status.HTTP_200_OK
-#         # user.refresh_from_db()
-#         # assert check_password('JaneDoe123!', user.password)  # Assert old password
-#         # assert check_password('NewPassword123!', user.password)  # Assert new password
+#         assert response.data['status'] == 'OK'
+#         assert response.data['message'] == 'Password updated successfully'
+#         user.refresh_from_db()
+#         assert user.check_password('NewPassword123!')
 
 #     def test_update_password_without_old_password(self, api_client, mock_token, users):
 #         user = users[0]

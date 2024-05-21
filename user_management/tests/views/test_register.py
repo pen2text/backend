@@ -1,6 +1,13 @@
+# from unittest.mock import patch
 # import pytest
 # from rest_framework import status
 # from django.urls import reverse
+
+
+# @pytest.fixture
+# def mock_send_verification_email():
+#     with patch('user_management.views.send_verification_email') as mock:
+#         yield mock
 
 # @pytest.mark.django_db
 # class TestUserRegistrationView:

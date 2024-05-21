@@ -13,11 +13,6 @@ def api_client():
     return APIClient()
 
 @pytest.fixture
-def mock_send_verification_email():
-    with patch('user_management.views.send_verification_email') as mock:
-        yield mock
-
-@pytest.fixture
 def users(db):
     user1 = Users.objects.create(
         first_name='Jane',

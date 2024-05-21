@@ -203,50 +203,7 @@ class CheckEmailExistsView(generics.GenericAPIView):
             "message": "Email exists",
         }
         return Response(response_data, status=status.HTTP_200_OK)
-
-class UpdateRoleView(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-    
-    serializer_class = RoleSerializer
-    def patch(self, request, format=None):
-        if request.user.role != 'admin':
-            response_data = {
-                "status": "FAILED",
-                "message": "Forbidden: You do not have permission to update user roles",
-            }
-            return Response(response_data, status=status.HTTP_403_FORBIDDEN)
-        
-        try:
-            user_id = request.data.get('id')
-            user = Users.objects.get(id=user_id)
-        except Users.DoesNotExist:
-            response_data = {
-                "status": "FAILED", 
-                "message": "User does not exist", 
-            }
-            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
-        
-        serializer = self.serializer_class(user, data=request.data, partial=True, context={'request': request})
-        
-        if not serializer.is_valid():
-            response_data = {
-                "status": "FAILED",
-                "message": "Validation failed",
-                "errors": validation_error(serializer.errors)
-            }
-            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
-        
-        self.update(serializer)
-        user = UserSerializer(user)
-
-        response_data = {
-            "status": "OK", 
-            "message": "Role updated successfully", 
-            "data": serializer.data, 
-        }
-        return Response(response_data, status=status.HTTP_200_OK)
-    
+   
 class UserUpdateView(generics.UpdateAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -288,5 +245,50 @@ class UserUpdateView(generics.UpdateAPIView):
             "status": "OK",
             "message": "User information updated successfully",
             "data": serializer.data,
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
+    
+class UpdateRoleView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    serializer_class = RoleSerializer
+
+    def patch(self, request, format=None):
+        if request.user.role != 'admin':
+            response_data = {
+                "status": "FAILED",
+                "message": "Forbidden: You do not have permission to update user roles",
+            }
+            return Response(response_data, status=status.HTTP_403_FORBIDDEN)
+        
+        try:
+            user_id = request.data.get('id')
+            user = Users.objects.get(id=user_id)
+        except Users.DoesNotExist:
+            response_data = {
+                "status": "FAILED", 
+                "message": "User does not exist", 
+            }
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = self.serializer_class(user, data=request.data, partial=True, context={'request': request})
+        
+        if not serializer.is_valid():
+            response_data = {
+                "status": "FAILED",
+                "message": "Validation failed",
+                "errors": validation_error(serializer.errors)
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer.save()
+        
+        user_data = UserSerializer(user).data 
+
+        response_data = {
+            "status": "OK", 
+            "message": "Role updated successfully", 
+            "data": user_data,
         }
         return Response(response_data, status=status.HTTP_200_OK)
