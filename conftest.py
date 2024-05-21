@@ -5,6 +5,7 @@ from datetime import date
 from rest_framework.test import APIClient
 from user_management.models import Users
 from rest_framework_simplejwt.tokens import AccessToken
+from utils.jwt_token_utils import generate_jwt_token
 
 
 @pytest.fixture
@@ -84,7 +85,16 @@ def mock_user_serializer_save(db):
     with patch('user_management.serializers.UserSerializer.save', side_effect=_create_user) as mock:
         yield mock
 
-
+@pytest.fixture
+def mock_jwt_token():
+    def token(user, token_type):
+        payload = {
+            'email': user.email,
+            'id': str(user.id),
+            'token_type': token_type
+        }
+        return generate_jwt_token(payload)
+    return token
        
 # @pytest.fixture
 # def mock_user_serializer_save():
