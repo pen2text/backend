@@ -82,21 +82,14 @@
                 ">
               Dear {{name}},
             </p>
-            <p style="
+            <div style="
                   margin: 0;
                   margin-top: 17px;
                   font-weight: 500;
                   letter-spacing: 0.56px;
                 ">
-                  <p>Thank you for choosing PEN2TEXT!</p>
-                  <p>To finalize your registration and secure your account, we kindly ask you to verify your email address by clicking the link below:</p>
-                  <p>If you're unable to click the link, please copy and paste it into your browser's address bar.</p>
-                  <p>Please note that this verification link will expire after <span style="font-weight: 600; color: #1f1f1f;">5 minutes </span>  for security purposes.</p>
-                  <p>Once your email address is verified, you'll gain full access to all PEN2TEXT features and services.</p>
-                  <p>If you didn't sign up for a PEN2TEXT account, please disregard this email.</p>
-                  <p>For any questions or assistance, feel free to reach out to us.</p>
-                  <p>Best regards,<br>
-            </p>
+                  {{body}}
+          </div>
             <p style="
                   margin: 0;
                   margin-top: 60px;
@@ -105,7 +98,7 @@
                   color: #ba3d4f;
                   text-align: center;
                 ">
-              <a href={{link}}>Verification Link</a>
+              <a href={{link}}>{{button_text}}</a>
             </p>
           </div>
         </div>

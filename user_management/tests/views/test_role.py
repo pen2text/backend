@@ -62,3 +62,45 @@
 #         assert response.status_code == status.HTTP_404_NOT_FOUND
 #         assert response.data['status'] == 'FAILED'
 #         assert response.data['message'] == 'User does not exist'
+        
+#     def test_user_cannot_update_own_role(self, api_client, users, mock_token):
+#         url = reverse('update-role')
+
+#         admin_user = users[0]
+
+#         regular_user_token = mock_token(admin_user)
+#         api_client.credentials(HTTP_AUTHORIZATION='Bearer ' + str(regular_user_token))
+
+#         update_data = {
+#             'id': str(admin_user.id),
+#             'role': 'admin'
+#         }
+
+#         response = api_client.patch(url, update_data, format='json')
+
+#         assert response.status_code == status.HTTP_400_BAD_REQUEST
+#         assert response.data['status'] == 'FAILED'
+#         assert response.data['message'] == 'Validation failed'
+#         assert 'errors' in response.data
+#         assert 'id' in response.data['errors']
+        
+#     def test_update_role_invalid_role(self, api_client, users, mock_token):
+#         url = reverse('update-role')
+
+#         admin_user = users[0]
+
+#         regular_user_token = mock_token(admin_user)
+#         api_client.credentials(HTTP_AUTHORIZATION='Bearer ' + str(regular_user_token))
+
+#         update_data = {
+#             'id': str(users[1].id),
+#             'role': 'invalid-role'
+#         }
+
+#         response = api_client.patch(url, update_data, format='json')
+
+#         assert response.status_code == status.HTTP_400_BAD_REQUEST
+#         assert response.data['status'] == 'FAILED'
+#         assert response.data['message'] == 'Validation failed'
+#         assert 'errors' in response.data
+#         assert 'role' in response.data['errors']

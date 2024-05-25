@@ -2,15 +2,30 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
 from user_management.models import Users
-from utils.email_utils import send_reset_password_email
+from utils.email_utils import send_reset_password_email, send_verification_email
 from utils.jwt_token_utils import verify_token
 from utils.format_errors import validation_error
-from authentication.serializers import ResetPasswordSerializer, CustomTokenObtainPairSerializer
+from authentication.serializers import ResetPasswordSerializer, LoginSerializer
+from django.contrib.auth import authenticate
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
-class CustomTokenObtainPairView(TokenObtainPairView):
-    serializer_class = CustomTokenObtainPairSerializer
+
+class LoginView(TokenObtainPairView):
+    serializer_class = LoginSerializer
+    
     def post(self, request, *args, **kwargs):
+        auth = JWTAuthentication()
+        user_auth_tuple = auth.authenticate(request)
+        
+        if user_auth_tuple is not None:
+            response_data = {
+                "status": "FAILED",
+                "message": "Forbidden: You are already logged in",
+            }
+            return Response(response_data, status=status.HTTP_403_FORBIDDEN)
+        
         serializer = self.serializer_class(data=request.data)
         
         if not serializer.is_valid():
@@ -20,17 +35,50 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 "errors": validation_error(serializer.errors)
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        email = serializer.validated_data.get('email')
+        password = serializer.validated_data.get('password')
         
-        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+        user = authenticate(email=email, password=password)
+        
+        if not user:
+            response_data = {
+                "status": "FAILED",
+                "message": "Wrong email or password",
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not user.is_verified:
+            send_verification_email(user)
+            response_data = {
+                "status": "FAILED",
+                "message": "Please verify your email address, email has been sent.",
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        
+        refresh = RefreshToken.for_user(user)
+        refresh['email'] = user.email
+        refresh['role'] = user.role
+        
+        response_data = {
+            'status': 'OK',
+            'message': 'User logged in successfully.',
+            'data':{
+                'access_token': str(refresh.access_token),
+                'refresh_token': str(refresh),
+            }
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
 
 class ForgotPasswordView(APIView):
     queryset = Users.objects.all()
     lookup_field = 'email'
+    
     def get(self, request, *args, **kwargs):
         user_email = self.kwargs.get('email')
-        if not user_email:
+        if not user_email or user_email.strip() == '':
             response_data = {
-                "status": "OK",
+                "status": "FAILED",
                 "message": "Email is required",
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
@@ -44,51 +92,19 @@ class ForgotPasswordView(APIView):
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         
+        if not send_reset_password_email(user):
+            response_data = {
+                "status": "FAILED",
+                "message": "An error occurred while sending the email. Please try again later.",
+            }
+            return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
         response_data = {
             "status": "OK",
             "message": "Password reset email has been sent",
         }
-        
-        #send password rest email
-        if not send_reset_password_email(user):
-            response_data["status"] = "FAILED"
-            response_data["message"] = "An error occurred while sending the email. Please try again later."
-        
-        return Response(response_data, status=response_data["code"])
-
-class ResetPasswordView(APIView):
-    serializer_class = ResetPasswordSerializer
-    def put(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
-        
-        if not serializer.is_valid():
-            response_data = {
-                "status": "OK",
-                "message": "Validation error",
-                "errors": validation_error(serializer.errors)
-            }
-            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
-
-        token = serializer.validated_data.get('token')
-        password = serializer.validated_data.get('password')
-
-        try:
-            user = verify_token(token, 'forgot_password')
-        except (TypeError, ValueError, OverflowError, Users.DoesNotExist):
-            response_data = {
-                    "status": "FAILED",
-                    "message": "Invalid token",
-            }
-            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
-
-        user.set_password(password)
-        user.save()
-        response_data = {
-                "status": "OK",
-                "message": "Password updated successfully",
-        }
         return Response(response_data, status=status.HTTP_200_OK)
-    
+
 class VerifyEmailView(APIView):
     def get(self, request, token):
         try:
@@ -106,3 +122,25 @@ class VerifyEmailView(APIView):
                 "message": str(e),
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        
+class ResetPasswordView(APIView):
+    serializer_class = ResetPasswordSerializer
+    
+    def put(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        
+        if not serializer.is_valid():
+            response_data = {
+                "status": "FAILED",
+                "message": "Validation error",
+                "errors": validation_error(serializer.errors)
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer.save()
+        response_data = {
+            "status": "OK",
+            "message": "Password updated successfully",
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
+    
