@@ -1,4 +1,5 @@
 import uuid
+from package_manager.models import PackagePlanDetails, PlanType
 import pytest
 from unittest.mock import patch
 from datetime import date
@@ -90,6 +91,25 @@ def mock_jwt_token():
         }
         return generate_jwt_token(payload)
     return token
+ 
+@pytest.fixture
+def package_plans(db):
+    plan1 = PackagePlanDetails.objects.create(
+        name='free',
+        plan_type=PlanType.LIMITED_USAGE,
+        usage_limit=10,
+        price=0.00,
+        days=1
+    )
+    plan2 = PackagePlanDetails.objects.create(
+        name='free_unregistered',
+        plan_type=PlanType.LIMITED_USAGE,
+        usage_limit=10,
+        price=0.00,
+        days=7
+    )
+    return [plan1, plan2]
+ 
        
 # @pytest.fixture
 # def mock_user_serializer_save():
