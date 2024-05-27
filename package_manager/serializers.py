@@ -3,6 +3,10 @@ from package_manager import models
 
 
 class PackagePlanDetailSerializer(serializers.ModelSerializer):
+    
+    def validate(self, data):
+        pass
+        
     class Meta:
         model = models.PackagePlanDetails
         fields = ['id', 'name', 'usage_limit', 'plan_type', 'price', 'days', 'created_at', 'updated_at']
