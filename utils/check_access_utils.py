@@ -116,7 +116,7 @@ def check_access(user: Users, ip_address) -> bool:
     else:
         return check_free_access(ip_address)
 
-def isUserHasPackage(user: Users) -> bool:
+def is_user_has_active_package(user: Users) -> bool:
     limited = check_limited_usage_access(user)
     unlimited = check_unlimited_usage_access(user) 
     return limited[0] or unlimited[0]

@@ -2,11 +2,11 @@ from rest_framework import status, generics
 from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
 from utils.chapa_utils import Chapa
-from utils.check_access_utils import isUserHasPackage
-from .models import ChapaTransactions
-from .serializers import ChapaTransactionSerializer
+from utils.check_access_utils import is_user_has_active_package
+from .models import ChapaStatus, ChapaTransactions
+from .serializers import ChapaPaymentInitializationSerializer
 from utils.format_errors import validation_error
-from package_manager.models import PackagePlanDetails, TempSubscriptionPlans
+from package_manager.models import PackagePlanDetails, PlanType, TempSubscriptionPlans
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
@@ -15,8 +15,9 @@ class ChapaTransactionInitiateView(generics.CreateAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    serializer_class = ChapaTransactionSerializer
+    serializer_class = ChapaPaymentInitializationSerializer
     def post(self, request, *args, **kwargs):
+        user = request.user
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
             response_data = {
@@ -26,46 +27,84 @@ class ChapaTransactionInitiateView(generics.CreateAPIView):
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         
-        if isUserHasPackage(request.user):
+        if is_user_has_active_package(request.user):
             response_data = {
                 'status': 'FAILED',
-                'message': 'User already has a package'
+                'message': "You hadn't finished using the previous package, kindly finish using it before purchasing another package"
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
             
-        package = serializer.validated_data.pop('package')
-        instance = serializer.save()
-        response = Chapa.initialize_transaction(instance)
-                
-        if response.get('status') == 'failed':
-            instance.delete()
-            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        package_instance = PackagePlanDetails.objects.get(id= serializer.validated_data['id'])
         
-        package_instance = PackagePlanDetails.objects.get(id=package['id'])
-         
-        TempSubscriptionPlans.objects.create(
-            user= request.user,
-            transaction= instance,
-            package_detail= package_instance,
-            usage_limit=  package_instance.usage_limit if package_instance.usage_limit > 0 else package['usage_limit']
+        # calculate package fee
+        package_fee = 20
+        
+        # create transaction       
+        new_transaction = ChapaTransactions.objects.create(
+            amount= package_fee,
+            currency='ETB',
+            phone_number= "0912345678",
+            email = user.email,
+            first_name = user.first_name,
+            last_name = user.last_name,
+            payment_title = 'Payment',
+            description = 'Payment Description'
         )
-        return Response(response, status=status.HTTP_200_OK)
         
+        response = Chapa.initialize_transaction(new_transaction)
+        
+        if not response:
+            response_data = {
+                'status': 'FAILED',
+                'message': 'Failed to initialize transaction'
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        
+        if response['status'] == 'success':
+            new_transaction .status = ChapaStatus.PENDING
+            new_transaction .checkout_url = response['data']['checkout_url']
+            new_transaction .save()
+                
+        if response['status'] == 'failed':
+            new_transaction .delete()
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+                
+        usage_limit = package_instance.usage_limit
+        if package_instance.plan_type in [PlanType.CUSTOM_LIMITED_USAGE, PlanType.NON_EXPIRING_LIMITED_USAGE]:
+            usage_limit = serializer.validated_data['usage_limit']
+            
+        TempSubscriptionPlans.objects.create(
+            user= user,
+            transaction= new_transaction ,
+            package_detail= package_instance,
+            usage_limit=  usage_limit
+        )
+        
+        response_data = {
+            'status': 'OK',
+            'message': 'Transaction initialized successfully',
+            'data': {
+                'checkout_url': response['data']['checkout_url']
+            }
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
+
+
 # @csrf_exempt       
-class ChaPaTransactionVerifyView(generics.RetrieveAPIView):
-    serializer_class = ChapaTransactionSerializer
+class ChapaTransactionVerifyView(generics.RetrieveAPIView):
+    serializer_class = ChapaPaymentInitializationSerializer
     queryset = ChapaTransactions
     
     def get(self, request, *args, **kwargs):
         instance = self.get_object()
+        
         if instance.status == 'success':
-            return Response(
-                {
-                    'status': 'success',
-                    'message': 'Transaction already verified'
-                },
-                status=status.HTTP_200_OK
-            )  
+            response_data = {
+                'status': 'OK',
+                'message': 'Transaction already verified'
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+            
         response = Chapa.verify_payment(instance)
         return Response(response, status=status.HTTP_200_OK)
 

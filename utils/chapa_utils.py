@@ -22,9 +22,9 @@ class Chapa:
         }
 
     @classmethod
-    def initialize_transaction(cls, transaction: models.ChapaTransactions) -> dict:
-        
-        data = {
+    def initialize_transaction(cls, transaction) -> dict:
+        # data['return_url']: 'https://www.google.com/',
+        payment_data = {
             'amount': transaction.amount,
             'currency': transaction.currency,
             'email': transaction.email,
@@ -32,8 +32,6 @@ class Chapa:
             'last_name': transaction.last_name,
             'tx_ref': transaction.id.__str__(),
             'callback_url': CALLBACK_URL + transaction.id.__str__(),
-            # 'return_url': 'https://www.google.com/',
-            'phone_number': transaction.phone_number,
             'customization': {
                 'title': transaction.payment_title,
                 'description': transaction.description
@@ -41,21 +39,14 @@ class Chapa:
         }
         
         transaction_url = "https://api.chapa.co/v1/transaction/initialize"
-        response = requests.post(transaction_url, json=data, headers=cls.get_headers())
-
-        data = response.json()
-        if data and data.get('status') == 'success':
-            transaction.status = models.ChapaStatus.PENDING
-            transaction.checkout_url = data.get('data').get('checkout_url')
-            transaction.save()
-
-        return data
+        response = requests.post(transaction_url, json=payment_data, headers=cls.get_headers())
+        return response.json()
     
     @classmethod
     def verify_payment(cls, transaction: models.ChapaTransactions) -> dict:
         verify_url = "https://api.chapa.co/v1/transaction/verify/" + transaction.id.__str__()
-        # payload = ''
-        response = requests.get(verify_url, headers=cls.get_headers(),)
+        response = requests.get(verify_url, headers=cls.get_headers())
+        
         data = response.json()
         if data and data.get('status') == 'success' and data.get('data').get('status') == 'success':
             transaction.status = data.get('status')
@@ -71,8 +62,11 @@ def create_premier_plan(temp_subscription: TempSubscriptionPlans, chapa_transact
     
     expire_date = timezone.now() + timedelta(days=temp_subscription.package_detail.days)
     user = temp_subscription.user
+    
+    if temp_subscription.package_detail.plan_type == PlanType.NON_EXPIRING_LIMITED_USAGE:
+        expire_date = None
 
-    if temp_subscription.package_detail.plan_type == PlanType.LIMITED_USAGE:
+    if temp_subscription.package_detail.plan_type in  (PlanType.LIMITED_USAGE, PlanType.CUSTOM_LIMITED_USAGE, PlanType.NON_EXPIRING_LIMITED_USAGE):
         LimitedUsageSubscriptionPlans.objects.create(
             user= user,
             transaction= chapa_transaction,
@@ -87,9 +81,4 @@ def create_premier_plan(temp_subscription: TempSubscriptionPlans, chapa_transact
             package_plan= temp_subscription.package_detail,
             expire_date= expire_date
         )
-    elif temp_subscription.package_detail.plan_type == PlanType.NON_EXPIRING_LIMITED_USAGE:
-        UnlimitedUsageSubscriptionPlans.objects.create(
-            user= user,
-            transaction= chapa_transaction,
-            package_plan= temp_subscription.package_detail
-        )  
+  
