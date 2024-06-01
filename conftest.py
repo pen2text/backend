@@ -1,4 +1,4 @@
-import uuid
+import os
 from package_manager.models import PackagePlanDetails, PlanType
 import pytest
 from unittest.mock import patch
@@ -95,20 +95,34 @@ def mock_jwt_token():
 @pytest.fixture
 def package_plans(db):
     plan1 = PackagePlanDetails.objects.create(
-        name='free',
-        plan_type=PlanType.LIMITED_USAGE,
-        usage_limit=10,
-        price=0.00,
-        days=1
+        name= "free",
+        plan_type= PlanType.FREE_PACKAGE,
+        usage_limit= 10,
+        price= 0.00,
+        days= 1
     )
     plan2 = PackagePlanDetails.objects.create(
-        name='free_unregistered',
-        plan_type=PlanType.LIMITED_USAGE,
-        usage_limit=10,
-        price=0.00,
-        days=7
+        name= "free_unregistered",
+        plan_type= PlanType.FREE_UNREGISTERED_PACKAGE,
+        usage_limit= 10,
+        price= 0.00,
+        days= 7
     )
-    return [plan1, plan2]
+    plan3 = PackagePlanDetails.objects.create(
+        name= "premier_trial",
+        plan_type= PlanType.PREMIER_TRIAL_PACKAGE,
+        usage_limit= 20,
+        price= 0.00,
+        days= 30
+    )
+    plan4 = PackagePlanDetails.objects.create(
+        name= "limited_usage",
+        plan_type= PlanType.LIMITED_USAGE,
+        usage_limit= 0,
+        price= 14.99,
+        days= 30
+    )
+    return [plan1, plan2, plan3, plan4]
  
        
 # @pytest.fixture
