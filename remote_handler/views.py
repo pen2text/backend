@@ -6,6 +6,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from utils.format_errors import validation_error
 from utils.jwt_token_utils import generate_jwt_token
+import os
+API_TOKEN_LIMIT = os.getenv('API_TOKEN_LIMIT', 3)
 
 
 class RemoteAPITokenManagerCreateView(generics.CreateAPIView):
@@ -15,13 +17,22 @@ class RemoteAPITokenManagerCreateView(generics.CreateAPIView):
     serializer_class = RemoteAPITokenManagerSerializer
     def post(self, request, *args, **kwargs):
         user = request.user
+        token_count = RemoteAPITokenManagers.objects.filter(user=user).count()
+        if token_count >= int(API_TOKEN_LIMIT):
+            response_data = {
+                'status': 'FAILED',
+                'message': 'API Token Limit Exceeded',
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
             response_data = {
                 'status': 'FAILED',
                 'message': 'Validation Error',
-                'data': validation_error(serializer.errors)
+                'errors': validation_error(serializer.errors)
             }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         
         payload = {
             'token_type': 'remote-access-key',
@@ -48,6 +59,7 @@ class RemoteAPITokenManagerListView(generics.ListAPIView):
         queryset = self.get_queryset().filter(user=request.user)
         serializer = self.get_serializer(queryset, many=True)
         # serializer.data.pop('token')
+        
         response_data = {
             'status': 'OK',
             'message': 'Remote API Token List',

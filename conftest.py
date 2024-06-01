@@ -3,6 +3,7 @@ from package_manager.models import PackagePlanDetails, PlanType
 import pytest
 from unittest.mock import patch
 from datetime import date
+from remote_handler.models import RemoteAPITokenManagers
 from rest_framework.test import APIClient
 from user_management.models import Users
 from rest_framework_simplejwt.tokens import AccessToken
@@ -124,7 +125,17 @@ def package_plans(db):
     )
     return [plan1, plan2, plan3, plan4]
  
-       
+
+@pytest.fixture
+def remote_api_tokens(db, users):    
+    RemoteAPITokenManagers.objects.bulk_create([
+        RemoteAPITokenManagers(user=users[0], name='Token 1', token='token1'),
+        RemoteAPITokenManagers(user=users[0], name='Token 2', token='token2'),
+        RemoteAPITokenManagers(user=users[0], name='Token 3', token='token2'),
+        RemoteAPITokenManagers(user=users[1], name='Token 1', token='token3'),
+    ])
+    return RemoteAPITokenManagers.objects.all()  
+    
 # @pytest.fixture
 # def mock_user_serializer_save():
 #     with patch('user_management.serializers.UserSerializer.save') as mock:
