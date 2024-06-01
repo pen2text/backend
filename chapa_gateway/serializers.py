@@ -1,36 +1,46 @@
 from rest_framework import serializers
 from . import models
-from package_manager.models import PackagePlanDetails
+from package_manager.models import PackagePlanDetails, PlanType
 
 
-class PackageSerializer(serializers.Serializer):
-    id = serializers.UUIDField()
-    usage_limit = serializers.IntegerField(required=False)
-    
+
+class ChapaPaymentInitializationSerializer(serializers.Serializer):
+    id = serializers.UUIDField(required=True, allow_null=False)
+    usage_limit = serializers.IntegerField(required=False, allow_null=True)
+
     def validate_id(self, value):
+        package = PackagePlanDetails.objects.filter(id=value).first()
+        if not package:
+            raise serializers.ValidationError("Package not found")
+        
+        if package.plan_type in [PlanType.FREE_PACKAGE, PlanType.FREE_UNREGISTERED_PACKAGE, PlanType.PREMIER_TRIAL_PACKAGE]:
+            raise serializers.ValidationError("You cannot subscribe to a free package")
+        
+        return value
+
+    def validate_usage_limit(self, value):
+        package_id = self.initial_data.get('id')
+        
+        if not package_id:
+            raise serializers.ValidationError("id is required to validate usage_limit")
+
         try:
-            PackagePlanDetails.objects.get(id=value)
-            return value
+            package = PackagePlanDetails.objects.get(id=package_id)
         except PackagePlanDetails.DoesNotExist:
-            raise serializers.ValidationError("Package doesn't found")
-    
-class ChapaTransactionSerializer(serializers.ModelSerializer):
-    package = PackageSerializer()
+            raise serializers.ValidationError("Package not found")
+        
+        if package.plan_type in [PlanType.CUSTOM_LIMITED_USAGE, PlanType.NON_EXPIRING_LIMITED_USAGE]:
+            if value is None:
+                raise serializers.ValidationError("usage_limit is required for this package")
+            elif value < 1:
+                raise serializers.ValidationError("usage_limit must be greater than 0")
+        
+        return value
     
     class Meta:
         model = models.ChapaTransactions
-        fields = ['id', 'amount', 'currency', 'email', 'phone_number', 'first_name', 'last_name', 'payment_title', 'description', 'package']
-        kwargs = {
-            'id': {'read_only': True},
-            'amount': {'required': True},
-            'currency': {'required': True},
-            'email': {'required': True},
-            'phone_number': {'required': True},
-            'first_name': {'required': True},
-            'last_name': {'required': True},
-            'payment_title': {'required': True},
-            'description': {'required': True},
-        }
+        fields = ['id', 'usage_limit']
+
         
     def create(self, validated_data):
         return models.ChapaTransactions.objects.create(**validated_data)

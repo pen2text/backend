@@ -12,7 +12,6 @@ class ChapaTransactions(models.Model):
     amount = models.FloatField(default=0.0)
     currency = models.CharField(max_length=25, default='ETB')
     email = models.EmailField()
-    phone_number = models.CharField(max_length=25)
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     payment_title = models.CharField(max_length=20, default='Payment')
@@ -23,5 +22,4 @@ class ChapaTransactions(models.Model):
     checkout_url = models.URLField(null=True, blank=True)
     
     class Meta:
-        db_table = 'chapa_transactions'
-        
+        db_table = 'chapa_transactions'      
