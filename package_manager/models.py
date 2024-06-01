@@ -43,7 +43,7 @@ class UnlimitedUsageSubscriptionPlans(models.Model):
     package_plan = models.ForeignKey(PackagePlanDetails, on_delete=models.CASCADE)
     transaction = models.OneToOneField(ChapaTransactions, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
-    # expire_date = models.DateTimeField()
+    expire_date = models.DateTimeField()
     
     class Meta:
         db_table = 'unlimited_usage_subscription_plans'
@@ -56,7 +56,7 @@ class LimitedUsageSubscriptionPlans(models.Model):
     usage_count = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     usage_limit = models.IntegerField(default=0)
-    # expire_date = models.DateTimeField(null=True)
+    expire_date = models.DateTimeField(null=True)
     
     class Meta:
         db_table = 'limited_usage_subscription_plans'
