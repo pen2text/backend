@@ -33,8 +33,8 @@ class PackagePlanDetailCreateView(generics.CreateAPIView):
         serializer.save()
         response_data = {
             "status": "OK",
-            "message": "Plan created successfully",
-            "data": serializer.data,
+            "message": "Package plan created successfully",
+            "data": serializer.validated_data,
         }
         return Response(response_data, status=status.HTTP_201_CREATED)
 
@@ -128,25 +128,28 @@ class PackagePlanDetailUpdateView(generics.UpdateAPIView):
         try:
             package_id = request.data.get('id')
             instance = self.queryset.get(id=package_id)
-            serializer = self.get_serializer(instance, data=request.data)
-            if not serializer.is_valid():
-                response_data = {
-                    "status": "FAILED",
-                    "message": "validation error",
-                    "errors": validation_error(serializer.errors),
-                }
-                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
-            
-            serializer.save()
-            response_data = {
-                "status": "OK",
-                "message": "Plan updated successfully",
-                "data": serializer.data,
-            }
-            return Response(response_data, status=status.HTTP_200_OK)
         except PackagePlanDetails.DoesNotExist:
             response_data = {
                 "status": "FAILED",
-                "message": "Plan not found",
+                "message": "Package Plan not found",
             }
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        
+        partial = kwargs.pop('partial', False)
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        
+        if not serializer.is_valid():
+            response_data = {
+                "status": "FAILED",
+                "message": "validation error",
+                "errors": validation_error(serializer.errors),
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        
+        self.perform_update(serializer)
+        response_data = {
+            "status": "OK",
+            "message": "Plan updated successfully",
+            "data": serializer.data,
+        }
+        return Response(response_data, status=status.HTTP_200_OK)

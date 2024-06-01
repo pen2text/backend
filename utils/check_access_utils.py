@@ -15,7 +15,7 @@ def check_cusom_limited_usage_access(user: Users) -> bool:
 def check_free_registered_access(user: Users, ip_address) -> bool:
  
     user_record = UserAccessRecords.objects.filter(ip_address=ip_address, user=user).first()
-    package_plan = PackagePlanDetails.objects.get(name="free")
+    package_plan = PackagePlanDetails.objects.get(plan_type=PlanType.FREE_PACKAGE)
     if not user_record: 
         UserAccessRecords.objects.create(ip_address=ip_address, user=user, package_plan=package_plan)
         return True, PlanType.LIMITED_USAGE, package_plan.usage_limit
@@ -43,7 +43,7 @@ def check_free_registered_access(user: Users, ip_address) -> bool:
 def check_free_access(ip_address) -> bool:
     
     user_record = UserAccessRecords.objects.filter(ip_address=ip_address, user=None).first()
-    package_plan = PackagePlanDetails.objects.get(name="free_unregistered")
+    package_plan = PackagePlanDetails.objects.get(plan_type=PlanType.FREE_UNREGISTERED_PACKAGE)
     if not user_record: 
         UserAccessRecords.objects.create(ip_address=ip_address, package_plan=package_plan)  
         return True, PlanType.LIMITED_USAGE, package_plan.usage_limit

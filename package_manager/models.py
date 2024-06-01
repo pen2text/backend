@@ -8,6 +8,9 @@ class PlanType(models.TextChoices):
     LIMITED_USAGE = 'limited_usage', 'LIMITED_USAGE'
     NON_EXPIRING_LIMITED_USAGE = 'non_expiring_limited_usage', 'NON_EXPIRING_LIMITED_USAGE'
     CUSTOM_LIMITED_USAGE = 'custom_limited_usage', 'CUSTOM_LIMITED_USAGE'
+    FREE_PACKAGE = 'free_package', 'FREE_PACKAGE'
+    FREE_UNREGISTERED_PACKAGE = 'free_unregistered_package', 'FREE_UNREGISTERED_PACKAGE'
+    PREMIER_TRIAL_PACKAGE = 'premier_trial_package', 'PREMIER_TRIAL_PACKAGE'
 
 class PackagePlanDetails(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
