@@ -42,7 +42,23 @@ class Chapa:
         
         transaction_url = BASE_URL + "initialize"
         response = requests.post(transaction_url, json=payment_data, headers=cls.get_headers())
-        return response.json()
+        
+        data = response.json()
+        if not data or data['status'] != 'success':
+            response_data = {
+                'status': 'FAILED',
+                'message': 'Failed to initialize transaction'
+            }
+            return response_data
+        
+        response_data = {
+            'status': 'OK',
+            'message': 'Transaction initialized successfully',
+            'data': {
+                'checkout_url': data['data']['checkout_url']
+            }
+        }
+        return response_data
     
     @classmethod
     def verify_payment(cls, tx_ref) -> dict:
@@ -54,18 +70,19 @@ class Chapa:
         if data and data['status'] == 'success' and data['data']['status'] == 'success':
             response_data = {
                 'status': 'OK',
-                'message': 'Transaction verified successfully'
+                'message': 'Transaction verified successfully',
+                'data': data['data']
             }
             return response_data
         
         response_data = {
             'status': 'FAILED',
-            'message': 'Failed to verify transaction'
+            'message': 'Failed to verify payment transaction'
         }
         return response_data
         
         
-def create_premier_plan(temp_subscription: TempSubscriptionPlans, chapa_transaction: models.ChapaTransactions):
+def create_premier_plan(temp_subscription: TempSubscriptionPlans, chapa_transaction: models.ChapaTransactions, data: dict):
     try:
         with transaction.atomic():
             
@@ -95,6 +112,7 @@ def create_premier_plan(temp_subscription: TempSubscriptionPlans, chapa_transact
             temp_subscription.delete()
             
             chapa_transaction.status = models.ChapaStatus.SUCCESS
+            chapa_transaction.response_dump = data
             chapa_transaction.save()
             
         return True
