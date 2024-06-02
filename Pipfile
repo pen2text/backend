@@ -21,6 +21,7 @@ requests = "*"
 pytest-mock = "*"
 pytest-django = "*"
 pytest = "*"
+pytest-cov = "*"
 
 [dev-packages]
 
