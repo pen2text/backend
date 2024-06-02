@@ -82,17 +82,9 @@ class UserRetrieveByIdView(generics.RetrieveAPIView):
     
     queryset = Users.objects.all()
     serializer_class = UserSerializer
-    lookup_field = 'id'
 
     def retrieve(self, request, *args, **kwargs):
-        user = request.user
-        user_id = self.kwargs.get('id') 
-        if request.user.role == 'user' and request.user.id != user_id:
-            response_data = {
-                "status": "FAILED",
-                "message": "Forbidden: You do not have permission to access this resource",
-            }
-            return Response(response_data, status=status.HTTP_403_FORBIDDEN)
+        user_id = request.user.id
         
         try:
             user = self.queryset.get(id=user_id)  
@@ -105,7 +97,7 @@ class UserRetrieveByIdView(generics.RetrieveAPIView):
         serializer = self.get_serializer(user)  
         return Response({
             "status": "OK",
-            "message": "User retrieved successfully",
+            "message": "User data retrieved successfully",
             "data": serializer.data,
         }, status=status.HTTP_200_OK)
         
@@ -213,15 +205,8 @@ class UserUpdateView(generics.UpdateAPIView):
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
-        user_id = request.data.get('id')
-        
-        if str(request.user.id) != str(user_id):
-            response_data = {
-                "status": "FAILED",
-                "message": "Forbidden: You do not have permission to update this user's information",
-            }
-            return Response(response_data, status=status.HTTP_403_FORBIDDEN)  
-
+        user_id = request.user.id
+         
         try:
             user = self.queryset.get(id=user_id)
         except Users.DoesNotExist:
