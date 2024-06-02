@@ -1,7 +1,7 @@
 from rest_framework import status, generics
 from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
-from utils.chapa_utils import Chapa
+from utils.chapa_utils import Chapa, create_premier_plan
 from utils.check_access_utils import is_user_has_active_package
 from .models import ChapaStatus, ChapaTransactions
 from .serializers import ChapaPaymentInitializationSerializer
@@ -89,14 +89,22 @@ class ChapaTransactionInitiateView(generics.CreateAPIView):
         }
         return Response(response_data, status=status.HTTP_200_OK)
 
-
 # @csrf_exempt       
 class ChapaTransactionVerifyView(generics.RetrieveAPIView):
     serializer_class = ChapaPaymentInitializationSerializer
     queryset = ChapaTransactions
     
     def get(self, request, *args, **kwargs):
-        instance = self.get_object()
+        tx_ref = kwargs.get('pk')
+        try:
+            instance = self.queryset.objects.get(id=tx_ref)
+            temp_subscription = TempSubscriptionPlans.objects.filter(transaction_id=tx_ref).first()
+        except ChapaTransactions.DoesNotExist or TempSubscriptionPlans.DoesNotExist:
+            response_data = {
+                'status': 'FAILED',
+                'message': 'Invalid Transaction'
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         
         if instance.status == 'success':
             response_data = {
@@ -104,8 +112,19 @@ class ChapaTransactionVerifyView(generics.RetrieveAPIView):
                 'message': 'Transaction already verified'
             }
             return Response(response_data, status=status.HTTP_200_OK)
-            
-        response = Chapa.verify_payment(instance)
+           
+        response = Chapa.verify_payment(tx_ref.__str__())
+        if response['status'] == 'FAILED':
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        
+        result = create_premier_plan(temp_subscription, instance)
+        if result == False:
+            response_data = {
+                'status': 'FAILED',
+                'message': 'Failed to verify transaction'
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)      
+        
         return Response(response, status=status.HTTP_200_OK)
 
 @csrf_exempt
