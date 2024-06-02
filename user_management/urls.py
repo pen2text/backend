@@ -9,4 +9,5 @@ urlpatterns = [
     path('users/get-by-email/<str:email>', views.UserRetrieveByEmailView.as_view(), name='user-retrieve-by-email'),
     path('users/update', views.UserUpdateView.as_view(), name='user-update'),
     path('users/update-role', views.UpdateRoleView.as_view(), name='update-role'),
+    path('users/search/<str:name>', views.UserSearchByNameView.as_view(), name='user-search'),
 ]
