@@ -299,7 +299,7 @@ class UserSearchByNameView(generics.ListAPIView):
         search_term = self.kwargs.get('name').strip() or ''
 
         # search for users by first or last name containing the search term
-        users = self.queryset.filter(Q(first_name__icontains=search_term) | Q(last_name__icontains=search_term))
+        users = self.queryset.filter(Q(first_name__icontains=search_term) | Q(last_name__icontains=search_term)).order_by('first_name', 'last_name')
         
         serializer = self.get_serializer(users, many=True)
         response_data = {
