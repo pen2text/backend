@@ -27,7 +27,7 @@ class ChapaTransactionInitiateView(generics.CreateAPIView):
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         
-        if is_user_has_active_package(request.user):
+        if is_user_has_active_package(user):
             response_data = {
                 'status': 'FAILED',
                 'message': "You hadn't finished using the previous package, kindly finish using it before purchasing another package"
@@ -75,7 +75,7 @@ class ChapaTransactionInitiateView(generics.CreateAPIView):
 
 # @csrf_exempt       
 class ChapaTransactionVerifyView(generics.RetrieveAPIView):
-    serializer_class = ChapaPaymentInitializationSerializer
+    # serializer_class = ChapaPaymentInitializationSerializer
     queryset = ChapaTransactions
     
     def get(self, request, *args, **kwargs):
@@ -107,21 +107,21 @@ class ChapaTransactionVerifyView(generics.RetrieveAPIView):
         
         return Response(response, status=status.HTTP_200_OK)
 
-@csrf_exempt
-class ChapaWebhookView(generics.CreateAPIView):
-    queryset = ChapaTransactions
-    def post(self, request, *args, **kwargs):
-        data = request.data
-        try:
-            transaction_instance = self.queryset.objects.get(id=data.get('reference'))
-            transaction_instance.status = data.get('status')
-            transaction_instance.response_dump = data
-            transaction_instance.save()
-            return Response(data, status=status.HTTP_200_OK)
-        except ChapaTransactions.DoesNotExist:
-            return Response(
-                {
-                    'error': "Invalid Transaction"
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
+# @csrf_exempt
+# class ChapaWebhookView(generics.CreateAPIView):
+#     queryset = ChapaTransactions
+#     def post(self, request, *args, **kwargs):
+#         data = request.data
+#         try:
+#             transaction_instance = self.queryset.objects.get(id=data.get('reference'))
+#             transaction_instance.status = data.get('status')
+#             transaction_instance.response_dump = data
+#             transaction_instance.save()
+#             return Response(data, status=status.HTTP_200_OK)
+#         except ChapaTransactions.DoesNotExist:
+#             return Response(
+#                 {
+#                     'error': "Invalid Transaction"
+#                 },
+#                 status=status.HTTP_400_BAD_REQUEST
+#             )
