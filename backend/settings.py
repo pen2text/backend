@@ -253,3 +253,4 @@ LOGGING = {
 # Chapa settings
 CHAPA_SECRET_KEY = os.environ.get('CHAPA_SECRET_KEY')
 CHAPA_CALLBACK_URL = os.environ.get('CHAPA_CALLBACK_URL')
+CHAPA_BASE_URL = os.environ.get('CHAPA_BASE_URL')

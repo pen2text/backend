@@ -1,7 +1,7 @@
 from rest_framework import status, generics
 from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
-from utils.chapa_utils import Chapa
+from utils.chapa_utils import Chapa, create_premier_plan
 from utils.check_access_utils import is_user_has_active_package
 from .models import ChapaStatus, ChapaTransactions
 from .serializers import ChapaPaymentInitializationSerializer
@@ -27,7 +27,7 @@ class ChapaTransactionInitiateView(generics.CreateAPIView):
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         
-        if is_user_has_active_package(request.user):
+        if is_user_has_active_package(user):
             response_data = {
                 'status': 'FAILED',
                 'message': "You hadn't finished using the previous package, kindly finish using it before purchasing another package"
@@ -43,7 +43,6 @@ class ChapaTransactionInitiateView(generics.CreateAPIView):
         new_transaction = ChapaTransactions.objects.create(
             amount= package_fee,
             currency='ETB',
-            phone_number= "0912345678",
             email = user.email,
             first_name = user.first_name,
             last_name = user.last_name,
@@ -53,22 +52,14 @@ class ChapaTransactionInitiateView(generics.CreateAPIView):
         
         response = Chapa.initialize_transaction(new_transaction)
         
-        if not response:
-            response_data = {
-                'status': 'FAILED',
-                'message': 'Failed to initialize transaction'
-            }
-            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
-        
-        if response['status'] == 'success':
-            new_transaction .status = ChapaStatus.PENDING
-            new_transaction .checkout_url = response['data']['checkout_url']
-            new_transaction .save()
-                
-        if response['status'] == 'failed':
-            new_transaction .delete()
+        if response['status'] == 'FAILED':
+            new_transaction.delete()
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
-                
+        
+        new_transaction.status = ChapaStatus.PENDING
+        new_transaction.checkout_url = response['data']['checkout_url']
+        new_transaction.save()    
+         
         usage_limit = package_instance.usage_limit
         if package_instance.plan_type in [PlanType.CUSTOM_LIMITED_USAGE, PlanType.NON_EXPIRING_LIMITED_USAGE]:
             usage_limit = serializer.validated_data['usage_limit']
@@ -80,23 +71,24 @@ class ChapaTransactionInitiateView(generics.CreateAPIView):
             usage_limit=  usage_limit
         )
         
-        response_data = {
-            'status': 'OK',
-            'message': 'Transaction initialized successfully',
-            'data': {
-                'checkout_url': response['data']['checkout_url']
-            }
-        }
-        return Response(response_data, status=status.HTTP_200_OK)
-
+        return Response(response, status=status.HTTP_200_OK)
 
 # @csrf_exempt       
 class ChapaTransactionVerifyView(generics.RetrieveAPIView):
-    serializer_class = ChapaPaymentInitializationSerializer
+    # serializer_class = ChapaPaymentInitializationSerializer
     queryset = ChapaTransactions
     
     def get(self, request, *args, **kwargs):
-        instance = self.get_object()
+        tx_ref = kwargs.get('pk')
+        try:
+            instance = self.queryset.objects.get(id=tx_ref)
+            temp_subscription = TempSubscriptionPlans.objects.filter(transaction_id=tx_ref).first()
+        except ChapaTransactions.DoesNotExist or TempSubscriptionPlans.DoesNotExist:
+            response_data = {
+                'status': 'FAILED',
+                'message': 'Invalid Transaction'
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         
         if instance.status == 'success':
             response_data = {
@@ -104,25 +96,32 @@ class ChapaTransactionVerifyView(generics.RetrieveAPIView):
                 'message': 'Transaction already verified'
             }
             return Response(response_data, status=status.HTTP_200_OK)
-            
-        response = Chapa.verify_payment(instance)
+           
+        response = Chapa.verify_payment(tx_ref.__str__())
+        if response['status'] == 'FAILED':
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        
+        result = create_premier_plan(temp_subscription, instance, response['data'])
+        if result == False:
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)      
+        
         return Response(response, status=status.HTTP_200_OK)
 
-@csrf_exempt
-class ChapaWebhookView(generics.CreateAPIView):
-    queryset = ChapaTransactions
-    def post(self, request, *args, **kwargs):
-        data = request.data
-        try:
-            transaction_instance = self.queryset.objects.get(id=data.get('reference'))
-            transaction_instance.status = data.get('status')
-            transaction_instance.response_dump = data
-            transaction_instance.save()
-            return Response(data, status=status.HTTP_200_OK)
-        except ChapaTransactions.DoesNotExist:
-            return Response(
-                {
-                    'error': "Invalid Transaction"
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
+# @csrf_exempt
+# class ChapaWebhookView(generics.CreateAPIView):
+#     queryset = ChapaTransactions
+#     def post(self, request, *args, **kwargs):
+#         data = request.data
+#         try:
+#             transaction_instance = self.queryset.objects.get(id=data.get('reference'))
+#             transaction_instance.status = data.get('status')
+#             transaction_instance.response_dump = data
+#             transaction_instance.save()
+#             return Response(data, status=status.HTTP_200_OK)
+#         except ChapaTransactions.DoesNotExist:
+#             return Response(
+#                 {
+#                     'error': "Invalid Transaction"
+#                 },
+#                 status=status.HTTP_400_BAD_REQUEST
+#             )

@@ -7,10 +7,10 @@ from django.utils import timezone
 #     'status': 'FAILED',
 #     'message': 'You have reached the limit of your package plan',
 #     'plan_type': PlanType.LIMITED_USAGE,
+#     'usage_limit': 0
 # }
 
-def check_cusom_limited_usage_access(user: Users) -> bool:
-    pass
+
 
 def check_free_registered_access(user: Users, ip_address) -> bool:
  
@@ -75,10 +75,7 @@ def check_unlimited_usage_access(user: Users) -> bool:
     except UnlimitedUsageSubscriptionPlans.DoesNotExist:
         return False, PlanType.UNLIMITED_USAGE
     
-    today = timezone.now()
-    expire_date = unlimited_package.created_at + timedelta(days=unlimited_package.package_plan.days)
-    
-    if today < expire_date:
+    if unlimited_package.expire_date < timezone.now():
         return False, PlanType.UNLIMITED_USAGE
     
     return True, PlanType.UNLIMITED_USAGE
@@ -91,20 +88,15 @@ def check_limited_usage_access(user: Users) -> bool:
         return False, PlanType.LIMITED_USAGE, 0
     
     if limited_package.package_detail.plan_type == PlanType.NON_EXPIRING_LIMITED_USAGE:
-        if limited_package.usage_count >= limited_package.package_detail.usage_limit:
+        if limited_package.usage_limit <= limited_package.usage_count:
             return False, PlanType.LIMITED_USAGE, 0
         return True, PlanType.LIMITED_USAGE, limited_package.package_detail.usage_limit - limited_package.usage_count
-    
-    # Get the current date
-    today = timezone.now()
-    expire_date = limited_package.created_at + timedelta(days=limited_package.package_detail.days)
-    
-    if today < expire_date or limited_package.package_detail.usage_limit <= limited_package.usage_count:
-        return False
+       
+    if limited_package.expire_date < timezone.now() or limited_package.usage_limit <= limited_package.usage_count:
+        return False, PlanType.LIMITED_USAGE, 0
     return True, PlanType.LIMITED_USAGE, limited_package.package_detail.usage_limit - limited_package.usage_count
 
 def check_access(user: Users, ip_address) -> bool:
-    
     if user:
         result = check_limited_usage_access(user)
         if result[0] == True: return result
@@ -118,5 +110,5 @@ def check_access(user: Users, ip_address) -> bool:
 
 def is_user_has_active_package(user: Users) -> bool:
     limited = check_limited_usage_access(user)
-    unlimited = check_unlimited_usage_access(user) 
+    unlimited = check_unlimited_usage_access(user)
     return limited[0] or unlimited[0]
