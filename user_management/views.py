@@ -7,6 +7,8 @@ from utils.email_utils import send_verification_email
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from utils.format_errors import validation_error
+from django.db.models import Q
+
 
 class UserRegistrationView(generics.CreateAPIView):
     serializer_class = UserSerializer
@@ -275,5 +277,34 @@ class UpdateRoleView(APIView):
             "status": "OK", 
             "message": "Role updated successfully", 
             "data": user_data,
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
+    
+class UserSearchByNameView(generics.ListAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    queryset = Users.objects.all()
+    serializer_class = UserSerializer
+
+    def list(self, request, *args, **kwargs):
+        user = request.user
+        if user.role == 'user':
+            response_data = {
+                "status": "FAILED",
+                "message": "Forbidden: You do not have permission to access this resource",
+            }
+            return Response(response_data, status=status.HTTP_403_FORBIDDEN)
+        
+        search_term = self.kwargs.get('name').strip() or ''
+
+        # search for users by first or last name containing the search term
+        users = self.queryset.filter(Q(first_name__icontains=search_term) | Q(last_name__icontains=search_term))
+        
+        serializer = self.get_serializer(users, many=True)
+        response_data = {
+            "status": "OK",
+            "message": "Users retrieved successfully",
+            "data": serializer.data,
         }
         return Response(response_data, status=status.HTTP_200_OK)
