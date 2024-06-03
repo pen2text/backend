@@ -1,8 +1,9 @@
 import os
-from package_manager.models import PackagePlanDetails, PlanType
+from chapa_gateway.models import ChapaTransactions
+from package_manager.models import PackagePlanDetails, PlanType, TempSubscriptionPlans, UnlimitedUsageSubscriptionPlans
 import pytest
 from unittest.mock import patch
-from datetime import date
+from datetime import date, datetime, timedelta
 from remote_handler.models import RemoteAPITokenManagers
 from rest_framework.test import APIClient
 from user_management.models import Users
@@ -136,7 +137,51 @@ def remote_api_tokens(db, users):
     ])
     return RemoteAPITokenManagers.objects.all()  
     
-# @pytest.fixture
-# def mock_user_serializer_save():
-#     with patch('user_management.serializers.UserSerializer.save') as mock:
-#         yield mock
+@pytest.fixture
+def transactions(users):
+    transaction1 = ChapaTransactions.objects.create(
+        amount=20,
+        currency='ETB',
+        email=users[0].email,
+        first_name=users[0].first_name,
+        last_name=users[0].last_name,
+        payment_title='Payment',
+        description='Payment Description',
+        status= 'success'
+    )
+
+    transaction2 = ChapaTransactions.objects.create(
+        amount=20,
+        currency='ETB',
+        email=users[1].email,
+        first_name=users[1].first_name,
+        last_name=users[1].last_name,
+        payment_title='Payment',
+        description='Payment Description',
+        status= 'pending'
+    )
+    
+    return [transaction1, transaction2]
+
+@pytest.fixture
+def temp_subscription(transactions, users, package_plans):
+    temp1 = TempSubscriptionPlans.objects.create(
+        user=users[1],
+        transaction=transactions[1],
+        package_detail=package_plans[3],
+        usage_limit=10
+    )
+    return temp1
+
+@pytest.fixture
+def unlimited_usage_subscription_plans(db, users, package_plans, transactions):
+    plan1 = UnlimitedUsageSubscriptionPlans.objects.create(
+        user=users[0],
+        package_plan=package_plans[3],  
+        transaction=transactions[0],
+        created_at=datetime.now(),
+        expire_date=datetime.now() + timedelta(days=30)
+    )
+    
+    return [plan1]
+

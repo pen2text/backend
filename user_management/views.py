@@ -1,6 +1,7 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from utils.check_access_utils import is_user_has_active_package
 from .serializers import RoleSerializer, UserSerializer, UserUpdateSerializer
 from user_management.models import Users, UserActivities
 from utils.email_utils import send_verification_email
@@ -306,5 +307,21 @@ class UserSearchByNameView(generics.ListAPIView):
             "status": "OK",
             "message": "Users retrieved successfully",
             "data": serializer.data,
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
+    
+class UserHasActivePremierPackageView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, *args, **kwargs):
+        is_premier = is_user_has_active_package(request.user)
+        
+        response_data = {
+            "status": "OK",
+            "message": "User active premier package status fetched successfully",
+            "data": {
+                "is_premier": is_premier,
+            }
         }
         return Response(response_data, status=status.HTTP_200_OK)
