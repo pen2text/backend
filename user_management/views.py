@@ -338,13 +338,13 @@ class UserProfilePictureUpdateView(generics.UpdateAPIView):
 
     def update(self, request, *args, **kwargs):
         user = request.user
-        serializer = self.get_serializer(user, data=request.data, partial=True)
+        serializer = self.get_serializer(data=request.data)
         
         if not serializer.is_valid():
             response_data = {
                 'status': 'FAILED',
                 'message': 'Validation failed',
-                'errors': serializer.errors
+                'errors': validation_error(serializer.errors)
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         
@@ -361,9 +361,10 @@ class UserProfilePictureUpdateView(generics.UpdateAPIView):
         user.profile_picture_url = image_url
         user.save()
         
+        user_serializer = UserSerializer(user)
         response_data = {
             "status": "OK",
             "message": "Profile picture updated successfully",
-            "data": serializer.data,
+            "data": user_serializer.data,
         }
         return Response(response_data, status=status.HTTP_200_OK)

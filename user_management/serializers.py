@@ -29,7 +29,7 @@ class UserSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Users
-        fields = ('id', 'first_name', 'last_name', 'gender', 'date_of_birth', 'email', 'role', 'password', 'is_verified', 'created_at', 'updated_at')
+        fields = ('id', 'first_name', 'last_name', 'gender', 'date_of_birth', 'email', 'role', 'password', 'profile_picture_url', 'is_verified', 'created_at', 'updated_at')
         extra_kwargs = {
             'password': {'write_only': True}, 
             'id': {'read_only': True},  
@@ -106,7 +106,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Users
-        fields = ('id', 'first_name', 'last_name', 'gender', 'date_of_birth', 'email', 'role', 'password', 'old_password', 'is_verified', 'created_at', 'updated_at')
+        fields = ('id', 'first_name', 'last_name', 'gender', 'date_of_birth', 'email', 'role', 'password', 'old_password', 'profile_picture_url', 'is_verified', 'created_at', 'updated_at')
         extra_kwargs = {
             'id': {'read_only': True},
             'email': {'read_only': True},
@@ -133,11 +133,10 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
     
-class UserProfilePictureUpdateSerializer(serializers.ModelSerializer):
+class UserProfilePictureUpdateSerializer(serializers.Serializer):
     profile_picture = serializers.ImageField()
 
     class Meta:
-        model = Users  
         fields = ['profile_picture']
 
     def validate_profile_picture(self, value):

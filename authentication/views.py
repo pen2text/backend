@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from user_management.models import Users
+from user_management.serializers import UserSerializer
 from utils.check_access_utils import is_user_has_active_package
 from utils.email_utils import send_reset_password_email, send_verification_email
 from utils.jwt_token_utils import verify_token
@@ -64,18 +65,17 @@ class LoginView(TokenObtainPairView):
         refresh['role'] = user.role
         
         is_premier = is_user_has_active_package(user)
+        
+        user_serializer = UserSerializer(user)
+
         response_data = {
             'status': 'OK',
             'message': 'User logged in successfully.',
             'data':{
                 'access_token': str(refresh.access_token),
                 'refresh_token': str(refresh),
-                'role': user.role,
-                'id': str(user.id),
-                'email': user.email,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
                 'is_premier': is_premier,
+                **user_serializer.data,
             }
         }
         return Response(response_data, status=status.HTTP_200_OK)
