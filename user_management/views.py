@@ -1,13 +1,17 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import RoleSerializer, UserSerializer, UserUpdateSerializer
+from utils.check_access_utils import is_user_has_active_package
+from utils.upload_to_cloudinary import upload_image
+from .serializers import RoleSerializer, UserProfilePictureUpdateSerializer, UserSerializer, UserUpdateSerializer
 from user_management.models import Users, UserActivities
 from utils.email_utils import send_verification_email
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from utils.format_errors import validation_error
 from django.db.models import Q
+from rest_framework.parsers import MultiPartParser, FormParser
+
 
 
 class UserRegistrationView(generics.CreateAPIView):
@@ -305,6 +309,61 @@ class UserSearchByNameView(generics.ListAPIView):
         response_data = {
             "status": "OK",
             "message": "Users retrieved successfully",
+            "data": serializer.data,
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
+    
+class UserHasActivePremierPackageView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, *args, **kwargs):
+        is_premier = is_user_has_active_package(request.user)
+        
+        response_data = {
+            "status": "OK",
+            "message": "User active premier package status fetched successfully",
+            "data": {
+                "is_premier": is_premier,
+            }
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
+    
+class UserProfilePictureUpdateView(generics.UpdateAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    serializer_class = UserProfilePictureUpdateSerializer
+    parser_classes = (MultiPartParser, FormParser)
+
+    def update(self, request, *args, **kwargs):
+        user = request.user
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+        
+        if not serializer.is_valid():
+            response_data = {
+                'status': 'FAILED',
+                'message': 'Validation failed',
+                'errors': serializer.errors
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        
+        image = serializer.validated_data.get('profile_picture')
+        image_url = upload_image(image)  
+        
+        if not image_url:
+            response_data = {
+                'status': 'FAILED',
+                'message': 'Failed to upload image to server. Please try again.'
+            }
+            return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        user.profile_picture_url = image_url
+        user.save()
+        
+        response_data = {
+            "status": "OK",
+            "message": "Profile picture updated successfully",
             "data": serializer.data,
         }
         return Response(response_data, status=status.HTTP_200_OK)
