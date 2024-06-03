@@ -75,7 +75,7 @@ class ChapaTransactionInitiateView(generics.CreateAPIView):
 
 # @csrf_exempt       
 class ChapaTransactionVerifyView(generics.RetrieveAPIView):
-    # serializer_class = ChapaPaymentInitializationSerializer
+    serializer_class = ChapaPaymentInitializationSerializer
     queryset = ChapaTransactions
     
     def get(self, request, *args, **kwargs):
