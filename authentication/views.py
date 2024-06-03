@@ -11,6 +11,8 @@ from utils.format_errors import validation_error
 from authentication.serializers import ResetPasswordSerializer, LoginSerializer
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.permissions import IsAuthenticated
+
 
 
 class LoginView(TokenObtainPairView):
@@ -151,4 +153,15 @@ class ResetPasswordView(APIView):
             "message": "Password updated successfully",
         }
         return Response(response_data, status=status.HTTP_200_OK)
+
+class VerifyTokenView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated] 
     
+    def get(self, request, *args, **kwargs):
+        
+        response_data = {
+            "status": "OK",
+            "message": "Token is valid",
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
