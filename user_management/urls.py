@@ -11,4 +11,5 @@ urlpatterns = [
     path('users/update-role', views.UpdateRoleView.as_view(), name='update-role'),
     path('users/search/<str:name>', views.UserSearchByNameView.as_view(), name='user-search'),
     path('users/has-active-premier-package', views.UserHasActivePremierPackageView.as_view(), name='user-has-active-premier-package'),
+    path('users/update/profile-picture', views.UserProfilePictureUpdateView.as_view(), name='user-profile-picture-update'),
 ]

@@ -133,3 +133,15 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
     
+class UserProfilePictureUpdateSerializer(serializers.ModelSerializer):
+    profile_picture = serializers.ImageField()
+
+    class Meta:
+        model = Users  
+        fields = ['profile_picture']
+
+    def validate_profile_picture(self, value):
+        max_size = 2 * 1024 * 1024
+        if value.size > max_size:
+            raise serializers.ValidationError("Profile picture size must be less than 2 MB.")
+        return value

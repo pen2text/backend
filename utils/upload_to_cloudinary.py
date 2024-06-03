@@ -1,6 +1,9 @@
 import cloudinary.uploader
 
-def upload_image(image_file):
 
-    upload_result = cloudinary.uploader.upload(image_file)
-    return upload_result
+def upload_image(image):
+    try:
+        result = cloudinary.uploader.upload(image)
+        return result.get('url')
+    except Exception as e:
+        return None
