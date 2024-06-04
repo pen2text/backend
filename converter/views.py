@@ -129,6 +129,7 @@ class ConverterView(APIView):
                         image_url= processed_image_url
                     )
                     conversion_histories.append(conversion_history)
+                    
             if is_premier_user:
                 ConversionHistories.objects.bulk_create(conversion_histories)
             

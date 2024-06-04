@@ -3,14 +3,6 @@ from package_manager.models import LimitedUsageSubscriptionPlans, PackagePlanDet
 from user_management.models import Users
 from django.utils import timezone
 
-# response_data = {
-#     'status': 'FAILED',
-#     'message': 'You have reached the limit of your package plan',
-#     'plan_type': PlanType.LIMITED_USAGE,
-#     'usage_limit': 0
-# }
-
-
 
 def check_free_registered_access(user: Users, ip_address) -> bool:
  

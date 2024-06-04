@@ -1,13 +1,10 @@
 from rest_framework import serializers
 from .models import ConversionHistories
-from utils.upload_to_cloudinary import upload_image
 
 class ConversionHistorySerializer(serializers.ModelSerializer):
-    image_file = serializers.ImageField(write_only=True)
-
     class Meta:
         model = ConversionHistories
-        fields = ('id', 'image_file', 'text_content', 'image_url', 'created_at', 'updated_at')
+        fields = ('id', 'text_content', 'image_url', 'created_at', 'updated_at')
         extra_kwargs = {
             'id': {'read_only': True},
             'user': {'read_only': True},
@@ -16,15 +13,10 @@ class ConversionHistorySerializer(serializers.ModelSerializer):
             'UpdatedAt': {'read_only': True},
         }
         
-    def create(self, validated_data):
-        image = validated_data.pop('image_file')
-        res = upload_image(image)
-        validated_data['image_url'] = res['url']
-        return super().create(validated_data)
+    # def create(self, validated_data):
+    #     return super().create(validated_data)
      
 class ConversionHistoryUpdateSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField()
-    
     class Meta:
         model = ConversionHistories
         fields = ('id', 'user', 'text_content', 'image_url', 'created_at', 'updated_at')
@@ -34,3 +26,8 @@ class ConversionHistoryUpdateSerializer(serializers.ModelSerializer):
             'created_at': {'read_only': True},
             'updated_at': {'read_only': True},
         }
+        
+    def update(self, instance, validated_data):
+        instance.text_content = validated_data.get('text_content', instance.text_content)
+        instance.save()
+        return instance
