@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
 from utils.chapa_utils import Chapa, create_premier_plan
 from utils.check_access_utils import is_user_has_active_package
+from utils.price_calculator_utils import calculate_package_fee
 from .models import ChapaStatus, ChapaTransactions
 from .serializers import ChapaPaymentInitializationSerializer
 from utils.format_errors import validation_error
@@ -37,7 +38,9 @@ class ChapaTransactionInitiateView(generics.CreateAPIView):
         package_instance = PackagePlanDetails.objects.get(id= serializer.validated_data['id'])
         
         # calculate package fee
-        package_fee = 20
+        package_fee = package_instance.price
+        if package_instance.plan_type in [PlanType.CUSTOM_LIMITED_USAGE, PlanType.NON_EXPIRING_LIMITED_USAGE]:
+            package_fee = calculate_package_fee(package_instance.plan_type, serializer.validated_data['usage_limit'])
         
         # create transaction       
         new_transaction = ChapaTransactions.objects.create(
