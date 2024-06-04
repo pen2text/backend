@@ -8,7 +8,7 @@ from user_management.models import UserActivities
 from utils.upload_to_cloudinary import convert_image_to_text, upload_image
 from .serializers import ConverterSerializer, ImageUploadSerializer
 from utils.format_errors import validation_error
-from utils.check_access_utils import check_access, is_user_has_active_package
+from utils.check_access_utils import check_access
 from rest_framework.parsers import MultiPartParser, FormParser
 
 
@@ -69,10 +69,13 @@ class ConverterView(APIView):
 
         files = serializer.validated_data.get('images')
         
-        
+        # get user's package plan
+        user_package = check_access(request)
+
+        # check if user is a premier user
         is_premier_user = False
-        if request.user.is_authenticated:
-            is_premier_user = is_user_has_active_package(request.user)
+        if user_package['status'] and user_package['plan_type'] in [PlanType.FREE_PACKAGE, PlanType.FREE_UNREGISTERED_PACKAGE, PlanType.PREMIER_TRIAL_PACKAGE]:
+            is_premier_user = True
         
         
         # don't allow batch upload for free users
@@ -83,24 +86,25 @@ class ConverterView(APIView):
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         
-        # check whether the user has reached the limit of the package plan
-        # user_package = check_access(request.user, request.META.get('REMOTE_ADDR'))
-        user_package = check_access(request)
         
-        if user_package[0] == False:
+        # check if user has reached the limit of their package plan
+        if user_package['status'] == False:
             response_data = {
                 'status': 'FAILED',
                 'message': 'You have reached the limit of your package plan',
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST) 
         
-        if user_package[1] != PlanType.UNLIMITED_USAGE and len(files) > user_package[2]:
+        # check if user has enough package plan to convert all the images
+        remaining_usage = user_package['usage_limit'] - user_package['usage_count']
+        if user_package['plan_type'] != PlanType.UNLIMITED_USAGE and len(files) > remaining_usage:
             response_data = {
                 'status': 'FAILED',
                 'message': "You don't have enough package plan to convert all the images",
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
-           
+        
+        # process the images one by one  
         try:
             response_data = {
                 'status': 'OK',
@@ -134,9 +138,9 @@ class ConverterView(APIView):
                 ConversionHistories.objects.bulk_create(conversion_histories)
             
             # update user package usage count
-            if user_package[1] != PlanType.UNLIMITED_USAGE:
-                user_package[3].usage_count += len(files)
-                user_package[3].save()
+            if user_package['plan_type'] != PlanType.UNLIMITED_USAGE:
+                user_package["package"].usage_count += len(files)
+                user_package["package"].save()
                      
 #         #Log user image conversion activity
 #         # data = {
@@ -154,3 +158,4 @@ class ConverterView(APIView):
                 'message': 'An error occurred while processing the image',
             }
             return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
