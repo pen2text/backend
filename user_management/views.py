@@ -349,9 +349,10 @@ class UserProfilePictureUpdateView(generics.UpdateAPIView):
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         
         image = serializer.validated_data.get('profile_picture')
-        image_url = upload_image(image)  
         
-        if not image_url:
+        try:
+            image_url = upload_image(image)  
+        except Exception as e:
             response_data = {
                 'status': 'FAILED',
                 'message': 'Failed to upload image to server. Please try again.'

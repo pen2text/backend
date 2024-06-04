@@ -33,7 +33,8 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'password': {'write_only': True}, 
             'id': {'read_only': True},  
-            'is_verified': {'read_only': True},  
+            'is_verified': {'read_only': True},
+            'profile_picture_url': {'read_only': True},
             'role': {'read_only': True},  
         }
  
@@ -116,6 +117,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             'gender': {'required': False, 'allow_blank': True, 'allow_null': True},
             'date_of_birth': {'required': False, 'allow_null': True},
             'role': {'read_only': True},
+            'profile_picture_url': {'read_only': True},
             'is_verified': {'read_only': True},
             'created_at': {'read_only': True},
             'updated_at': {'read_only': True},

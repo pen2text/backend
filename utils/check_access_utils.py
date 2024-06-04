@@ -17,8 +17,8 @@ def check_free_registered_access(user: Users, ip_address) -> bool:
     user_record = UserAccessRecords.objects.filter(ip_address=ip_address, user=user).first()
     package_plan = PackagePlanDetails.objects.get(plan_type=PlanType.FREE_PACKAGE)
     if not user_record: 
-        UserAccessRecords.objects.create(ip_address=ip_address, user=user, package_plan=package_plan)
-        return True, PlanType.LIMITED_USAGE, package_plan.usage_limit
+        user_record = UserAccessRecords.objects.create(ip_address=ip_address, user=user, package_plan=package_plan)
+        return True, PlanType.LIMITED_USAGE, package_plan.usage_limit, user_record
     
     # Get the current date
     today = timezone.now()
@@ -32,21 +32,21 @@ def check_free_registered_access(user: Users, ip_address) -> bool:
     new_day = new_day.replace(hour=23, minute=59, second=59, microsecond=999999)
     
     if user_record.last_date_use <= new_day and user_record.usage_count >= package_plan.usage_limit:
-        return False, PlanType.LIMITED_USAGE, 0
+        return False, PlanType.LIMITED_USAGE, 0, user_record
     
     if user_record.last_date_use <= yesterday:
         user_record.usage_count = 0
         user_record.save()
         
-    return True, PlanType.LIMITED_USAGE, package_plan.usage_limit - user_record.usage_count
+    return True, PlanType.LIMITED_USAGE, package_plan.usage_limit - user_record.usage_count, user_record
 
 def check_free_access(ip_address) -> bool:
     
     user_record = UserAccessRecords.objects.filter(ip_address=ip_address, user=None).first()
     package_plan = PackagePlanDetails.objects.get(plan_type=PlanType.FREE_UNREGISTERED_PACKAGE)
     if not user_record: 
-        UserAccessRecords.objects.create(ip_address=ip_address, package_plan=package_plan)  
-        return True, PlanType.LIMITED_USAGE, package_plan.usage_limit
+        user_record = UserAccessRecords.objects.create(ip_address=ip_address, package_plan=package_plan)  
+        return True, PlanType.LIMITED_USAGE, package_plan.usage_limit, user_record
     
     # Get the current date
     today = timezone.now()
@@ -66,7 +66,7 @@ def check_free_access(ip_address) -> bool:
         user_record.usage_count = 0
         user_record.save()
         
-    return True, PlanType.LIMITED_USAGE, package_plan.usage_limit - user_record.usage_count
+    return True, PlanType.LIMITED_USAGE, package_plan.usage_limit - user_record.usage_count, user_record
 
 def check_unlimited_usage_access(user: Users) -> bool:
     
@@ -90,14 +90,17 @@ def check_limited_usage_access(user: Users) -> bool:
     if limited_package.package_detail.plan_type == PlanType.NON_EXPIRING_LIMITED_USAGE:
         if limited_package.usage_limit <= limited_package.usage_count:
             return False, PlanType.LIMITED_USAGE, 0
-        return True, PlanType.LIMITED_USAGE, limited_package.package_detail.usage_limit - limited_package.usage_count
+        return True, PlanType.LIMITED_USAGE, limited_package.package_detail.usage_limit - limited_package.usage_count, limited_package
        
     if limited_package.expire_date < timezone.now() or limited_package.usage_limit <= limited_package.usage_count:
         return False, PlanType.LIMITED_USAGE, 0
-    return True, PlanType.LIMITED_USAGE, limited_package.package_detail.usage_limit - limited_package.usage_count
+    return True, PlanType.LIMITED_USAGE, limited_package.package_detail.usage_limit - limited_package.usage_count, limited_package
 
-def check_access(user: Users, ip_address) -> bool:
-    if user:
+def check_access(request) -> bool:
+    ip_address = request.META.get('REMOTE_ADDR')
+    
+    if request.user.is_authenticated:
+        user = request.user
         result = check_limited_usage_access(user)
         if result[0] == True: return result
 
