@@ -1,7 +1,8 @@
+from package_manager.models import PlanType
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from utils.check_access_utils import is_user_has_active_package
+from utils.check_access_utils import is_user_has_active_package, user_package_plan_status
 from utils.upload_to_cloudinary import upload_image
 from .serializers import RoleSerializer, UserProfilePictureUpdateSerializer, UserSerializer, UserUpdateSerializer
 from user_management.models import Users, UserActivities
@@ -100,12 +101,22 @@ class UserRetrieveByIdView(generics.RetrieveAPIView):
                 "message": "User not found with the provided ID",
             }, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = self.get_serializer(user)  
-        return Response({
+        serializer = self.get_serializer(user) 
+        
+        # user premier package status
+        user_package_status = user_package_plan_status(user)
+        user_package_plan_status.pop("package", None)
+        
+        response_data = {
             "status": "OK",
             "message": "User data retrieved successfully",
-            "data": serializer.data,
-        }, status=status.HTTP_200_OK)
+            "data": {
+                **serializer.data,
+                "package_status": user_package_status,
+            }
+        }
+         
+        return Response(response_data, status=status.HTTP_200_OK)
         
 class UserRetrieveByEmailView(generics.RetrieveAPIView):
     authentication_classes = [JWTAuthentication]
