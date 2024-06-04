@@ -130,31 +130,3 @@ class ConversionHistoryUpdateView(generics.UpdateAPIView):
         }
         return Response(response_data, status=status.HTTP_200_OK)
 
-
-
-# class ConversionHistoryCreateView(generics.CreateAPIView):
-#     authentication_classes = [JWTAuthentication]
-#     permission_classes = [IsAuthenticated]
-    
-#     queryset = ConversionHistories.objects.all()
-#     serializer_class = ConversionHistorySerializer
-    
-#     def post(self, request, *args, **kwargs):
-#         serializer = self.get_serializer(data=request.data)
-#         if not serializer.is_valid():
-#             response_data = {
-#                 'status': 'FAILED',
-#                 'message': 'Validation Error',
-#                 'errors': validation_error(serializer.errors)
-#             }
-#             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
-        
-#         serializer.validated_data['user'] = request.user
-        
-#         serializer.save()
-#         response_data = {
-#             'status': 'OK',
-#             'message': 'Conversion History Created',
-#             'data': serializer.data
-#         }
-#         return Response(response_data, status=status.HTTP_201_CREATED)

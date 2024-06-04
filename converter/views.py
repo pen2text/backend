@@ -147,7 +147,8 @@ class ConverterView(APIView):
 #         # UserActivities.objects.create(**data)
 
             return Response(response_data, status=status.HTTP_200_OK)
-        except:
+        except Exception as e:
+            print(e)
             response_data = {
                 'status': 'FAILED',
                 'message': 'An error occurred while processing the image',
