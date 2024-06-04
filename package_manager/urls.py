@@ -7,4 +7,5 @@ urlpatterns = [
     path('package-plan/retrieve/<uuid:id>', views.PackagePlanDetailRetrieveView.as_view(), name='package-plan-retrieve'),
     path('package-plan/update', views.PackagePlanDetailUpdateView.as_view(), name='package-plan-update'),
     path('package-plan/delete/<uuid:id>', views.PackagePlanDetailDeleteView.as_view(), name='package-plan-delete'),
+    path('package-plan/fee/calculate', views.PackagePlanFeeCalculateView.as_view(), name='package-plan-fee-calculate'),
 ]

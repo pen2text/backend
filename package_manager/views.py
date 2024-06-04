@@ -1,10 +1,11 @@
 from rest_framework import status, generics
 from rest_framework.response import Response
 from package_manager.serializers import PackagePlanDetailSerializer, PackagePlanDetailUpdateSerializer
-from package_manager.models import PackagePlanDetails
+from package_manager.models import PackagePlanDetails, PlanType
 from utils.format_errors import validation_error
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from utils.price_calculator_utils import calculate_package_fee
 
 
 class PackagePlanDetailCreateView(generics.CreateAPIView):
@@ -154,3 +155,55 @@ class PackagePlanDetailUpdateView(generics.UpdateAPIView):
         }
         return Response(response_data, status=status.HTTP_200_OK)
     
+class PackagePlanFeeCalculateView(generics.GenericAPIView):
+    queryset = PackagePlanDetails.objects.all()
+    serializer_class = PackagePlanDetailSerializer
+
+    def post(self, request, *args, **kwargs):
+        try:
+            package_id = request.data.get('id')
+            instance = self.queryset.get(id=package_id)
+        except PackagePlanDetails.DoesNotExist:
+            response_data = {
+                "status": "FAILED",
+                "message": "Package Plan not found",
+            }
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        
+        if instance.plan_type in [PlanType.FREE_PACKAGE, PlanType.FREE_UNREGISTERED_PACKAGE, PlanType.PREMIER_TRIAL_PACKAGE]:
+            response_data = {
+                "status": "FAILED",
+                "message": "This package is free",
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        
+        if instance.plan_type in [PlanType.LIMITED_USAGE, PlanType.UNLIMITED_USAGE]:
+            response_data = {
+                "status": "FAILED",
+                "message": "This package has fixed fee",
+                "data": {
+                    "fee": instance.price,
+                }
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        
+        if instance.plan_type in [PlanType.CUSTOM_LIMITED_USAGE, PlanType.NON_EXPIRING_LIMITED_USAGE]: 
+            if request.data.get('usage_limit') is None:
+                response_data = {
+                    "status": "FAILED",
+                    "message": "Validation failed",
+                    "errors": {
+                        "usage_limit": "This field is required",
+                    }
+                }
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+            
+            fee = calculate_package_fee(instance.plan_type, request.data.get('usage_limit'))
+            response_data = {
+                "status": "OK",
+                "message": "Package fee calculated successfully",
+                "data": {
+                    "fee": fee,
+                },
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
