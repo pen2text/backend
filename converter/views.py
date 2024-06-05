@@ -36,7 +36,7 @@ class ConverterView(APIView):
 
         # check if user is a premier user
         is_premier_user = False
-        if user_package['status'] and user_package['plan_type'] in [PlanType.FREE_PACKAGE, PlanType.FREE_UNREGISTERED_PACKAGE, PlanType.PREMIER_TRIAL_PACKAGE]:
+        if user_package['status'] and user_package['plan_type'] not in [PlanType.FREE_PACKAGE, PlanType.FREE_UNREGISTERED_PACKAGE, PlanType.PREMIER_TRIAL_PACKAGE]:
             is_premier_user = True
         
         
