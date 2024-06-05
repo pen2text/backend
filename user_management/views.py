@@ -105,7 +105,7 @@ class UserRetrieveByIdView(generics.RetrieveAPIView):
         
         # user premier package status
         user_package_status = user_package_plan_status(user)
-        user_package_plan_status.pop("package", None)
+        # user_package_plan_status.pop("package", None)
         
         response_data = {
             "status": "OK",
