@@ -121,19 +121,16 @@ class ConverterView(APIView):
             }
             return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
 class ConvertUsingRemoteAPIView(generics.GenericAPIView):
-    # permission_classes = [IsAuthenticated]
-    # authentication_classes = [PrivateKeyAuthentication]
+    authentication_classes = [PrivateKeyAuthentication]
+    permission_classes = [IsAuthenticated]
     
     serializer_class = ConverterSerializer
     def post(self, request, *args, **kwargs):
-        
-        # print("request: ", request.META)
-        token = request.META.get('PEN_TEXT_API_KEY')
+
         response_data = {
             'status': 'OK',
-            'message': token,
+            'message': 'Image processed successfully',
         }
         return Response(response_data, status=status.HTTP_200_OK)
 
