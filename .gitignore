@@ -24,3 +24,7 @@ local_settings.py
 venv/
 
 /static/
+
+.coverage
+
+settings.json
