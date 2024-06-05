@@ -5,53 +5,15 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import generics
 from user_management.models import UserActivities
+from utils.jwt_token_utils import PrivateKeyAuthentication
 from utils.upload_to_cloudinary import convert_image_to_text, upload_image
 from .serializers import ConverterSerializer, ImageUploadSerializer
 from utils.format_errors import validation_error
 from utils.check_access_utils import check_access
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.permissions import IsAuthenticated
 
 
-
-class ConvertUsingRemoteAPIView(generics.GenericAPIView):
-    serializer_class = ConverterSerializer
-    
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if not serializer.is_valid():
-            response_data = {
-                'status': 'FAILED',
-                'message': 'Invalid data',
-                'errors': validation_error(serializer.errors)
-            }
-            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
-        
-        response_data = {
-            'status': 'OK',
-            'message': 'Image processed',
-            'data': []
-        }
-        
-        result = check_access(request.user, request.META.get('REMOTE_ADDR'))
-
-        # for index, image in serializer.validated_data:
-        #     #process image call ml model
-            
-        #     response_data['data'].append({
-        #         'index': index,
-        #         'text-content': 'This is a sample text content',
-        #         'state': 'OK',
-        #     })
-        
-        #Log server image conversion activity
-        # data = {
-        #     "user_id": user.id,
-        #     "ip_address": request.META.get('REMOTE_ADDR'),
-        #     "type": "server_conversion"
-        # }
-        # UserActivities.objects.create(**data)
-        
-        return Response(response_data, status=status.HTTP_200_OK)
     
 class ConverterView(APIView):
     parser_classes = (MultiPartParser, FormParser)
@@ -74,7 +36,7 @@ class ConverterView(APIView):
 
         # check if user is a premier user
         is_premier_user = False
-        if user_package['status'] and user_package['plan_type'] in [PlanType.FREE_PACKAGE, PlanType.FREE_UNREGISTERED_PACKAGE, PlanType.PREMIER_TRIAL_PACKAGE]:
+        if user_package['status'] and user_package['plan_type'] not in [PlanType.FREE_PACKAGE, PlanType.FREE_UNREGISTERED_PACKAGE, PlanType.PREMIER_TRIAL_PACKAGE]:
             is_premier_user = True
         
         
@@ -158,4 +120,20 @@ class ConverterView(APIView):
                 'message': 'An error occurred while processing the image',
             }
             return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ConvertUsingRemoteAPIView(generics.GenericAPIView):
+    # permission_classes = [IsAuthenticated]
+    # authentication_classes = [PrivateKeyAuthentication]
+    
+    serializer_class = ConverterSerializer
+    def post(self, request, *args, **kwargs):
+        
+        # print("request: ", request.META)
+        token = request.META.get('PEN_TEXT_API_KEY')
+        response_data = {
+            'status': 'OK',
+            'message': token,
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
 
