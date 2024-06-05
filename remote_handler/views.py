@@ -35,11 +35,11 @@ class RemoteAPITokenManagerCreateView(generics.CreateAPIView):
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
         
         payload = {
-            'token_type': 'remote-access-key',
+            'token_type': 'pen2text-api-key',
             'id': str(user.id),
             'email': user.email,
         }
-        serializer.validated_data['token'] = generate_jwt_token(payload, 10)
+        serializer.validated_data['token'] = generate_jwt_token(payload, 60)
         serializer.validated_data['user'] = user
         serializer.save()
         response_data = {

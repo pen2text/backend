@@ -2,6 +2,10 @@ import os
 import jwt
 import datetime
 from user_management.models import Users
+from rest_framework.authentication import BaseAuthentication
+from rest_framework.exceptions import AuthenticationFailed
+
+
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 def generate_jwt_token(payload, expiry_minutes=60):
@@ -26,6 +30,27 @@ def verify_token(token, token_type):
         
         if not user or token_type != decoded_token['token_type']:
             raise ValueError("Token get expired or invalid token, please request a new one.")
+        
+        if decoded_token['token_type'] == 'pen2text-api-key':
+            if user.token != decoded_token['token']:
+                raise ValueError("Token get expired or invalid token, please request a new one.")
+            
         return user
     except:
         raise ValueError("Token get expired or invalid token, please request a new one.")
+
+
+class PrivateKeyAuthentication(BaseAuthentication):
+    def authenticate(self, request):
+        private_key = request.META.get('PEN_TEXT_API_KEY')
+
+        if not private_key:
+            return None
+
+        try:
+            print("private_key: ", private_key)
+            user = verify_token(private_key, "pen2text-api-key")
+        except Exception as e:
+            raise AuthenticationFailed(str(e))
+
+        return (user, None)

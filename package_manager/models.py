@@ -28,7 +28,7 @@ class PackagePlanDetails(models.Model):
 class UserAccessRecords(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(Users, on_delete=models.CASCADE, null=True)
-    ip_address = models.CharField(max_length=50)
+    ip_address = models.CharField(max_length=50, null=True)
     usage_count = models.IntegerField(default=0)
     package_plan = models.ForeignKey(PackagePlanDetails, on_delete=models.CASCADE)
     last_date_use = models.DateTimeField(auto_now=True)
