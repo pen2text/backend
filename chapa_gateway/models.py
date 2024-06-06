@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MinValueValidator
 import uuid
 
 class ChapaStatus(models.TextChoices):
@@ -9,7 +10,7 @@ class ChapaStatus(models.TextChoices):
 
 class ChapaTransactions(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    amount = models.FloatField(default=0.0)
+    amount = models.FloatField(default=0.0,  validators=[MinValueValidator(0.0)])
     currency = models.CharField(max_length=25, default='ETB')
     email = models.EmailField()
     first_name = models.CharField(max_length=50)
