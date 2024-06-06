@@ -2,7 +2,6 @@ from rest_framework import serializers
 from package_manager.models import PackagePlanDetails, PlanType
 
 
-
 class PackagePlanDetailSerializer(serializers.ModelSerializer):
     
     def validate_plan_type(self, value):
@@ -86,6 +85,41 @@ class PackagePlanDetailUpdateSerializer(PackagePlanDetailSerializer):
             raise serializers.ValidationError('Package plan with this name and package type already exists')
         return value
     
+    def validate_days(self, value):
+        plan_type = self.instance.plan_type
+        if 'plan_type' in self.initial_data:
+            plan_type = self.initial_data.get('plan_type')
+        
+        if plan_type == PlanType.NON_EXPIRING_LIMITED_USAGE:
+            return 0
+            # raise serializers.ValidationError('Days cannot be set for non expiring package plans')
+        
+        if value <= 0:
+            raise serializers.ValidationError('Days must be greater than 0')
+        return value
+    
+    def validate_usage_limit(self, value):
+        plan_type = self.initial_data.get('plan_type')
+        
+        if plan_type == PlanType.UNLIMITED_USAGE:
+            return 0
+            # raise serializers.ValidationError('Usage limit cannot be set for unlimited package plans')
+        
+        if value <= 0:
+            raise serializers.ValidationError('Usage limit must be greater than 0')
+        return value
+    
+    def validate_price(self, value):
+        plan_type = self.initial_data.get('plan_type')
+
+        if plan_type in [PlanType.FREE_PACKAGE, PlanType.FREE_UNREGISTERED_PACKAGE, PlanType.PREMIER_TRIAL_PACKAGE]:
+            return 0
+            # raise serializers.ValidationError('Price cannot be set for this package plan')
+        
+        if value <= 0:
+            raise serializers.ValidationError('Package price must be greater than 0')
+        return value
+    
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.usage_limit = validated_data.get('usage_limit', instance.usage_limit)
@@ -109,15 +143,3 @@ class PackagePlanDetailUpdateSerializer(PackagePlanDetailSerializer):
             'updated_at': {'read_only': True},
         }
         
-
-'''
-            'usage_limit', 'days',
-
-try = _, _, premier_trial_package, 0, _,
-free = _, _, free_package, 0, _,
-free_unregistered = _, _, free_unregistered_package, 0, _,
-package_limited = _, _, limited, _, _,
-package_unlimited = _, 0, unlimited, _, _,
-limited_expiring = _, _, custom_limited_usage, _, _,
-limited_non_expiring = _, _, non_expiring_limited_usage, _, 0,
-'''
