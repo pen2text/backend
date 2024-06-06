@@ -38,7 +38,7 @@ def verify_token(token, token_type):
             
         return user
     except Exception as e:
-        raise ValueError(e)
+        raise ValueError("Token get expired or invalid token, please request a new one.")
 
 
 class PrivateKeyAuthentication(BaseAuthentication):
