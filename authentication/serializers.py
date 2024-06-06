@@ -1,6 +1,5 @@
 from rest_framework import serializers
 import re
-
 from utils.jwt_token_utils import verify_token
 
 
