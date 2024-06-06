@@ -124,9 +124,24 @@ def package_plans(db):
         price= 14.99,
         days= 30
     )
-    return [plan1, plan2, plan3, plan4]
+    
+    plan5 = PackagePlanDetails.objects.create(
+        name= "unlimited_usage",
+        plan_type= PlanType.UNLIMITED_USAGE,
+        usage_limit= 0,
+        price= 19.99,
+        days= 30
+    )
+    
+    plan6 = PackagePlanDetails.objects.create(
+        name= "custom",
+        plan_type= PlanType.CUSTOM_LIMITED_USAGE,
+        usage_limit= 0,
+        price= 5,
+        days= 10
+    )
+    return [plan1, plan2, plan3, plan4, plan5, plan6]
  
-
 @pytest.fixture
 def remote_api_tokens(db, users):    
     RemoteAPITokenManagers.objects.bulk_create([
