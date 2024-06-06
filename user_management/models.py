@@ -53,7 +53,6 @@ class Users(AbstractBaseUser):
     def has_module_perms(self, app_label):
         return self.is_superuser
 
-
 class UserActivities(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user_id = models.UUIDField(null=True, blank=True)
