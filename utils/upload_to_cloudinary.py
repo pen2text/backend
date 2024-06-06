@@ -11,8 +11,7 @@ def upload_image(image):
         result = cloudinary.uploader.upload(image)
         return result.get('url')
     except Exception as e:
-        raise RuntimeError(f"Request failed: {e}")
-
+        raise RuntimeError("Failed to upload image to cloudinary")
 
 def convert_image_to_text(image_file):
     try:
@@ -27,8 +26,8 @@ def convert_image_to_text(image_file):
         response_json = response.json()
         return response_json.get('text')
     except requests.exceptions.RequestException as e:
-        raise RuntimeError(f"Request failed: {e}")
+        raise RuntimeError(e)
     except Exception as e:
-        raise RuntimeError(f"Request failed: {e}")
+        raise RuntimeError(e)
   
     

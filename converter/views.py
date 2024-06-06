@@ -7,9 +7,9 @@ from rest_framework import generics
 from user_management.models import UserActivities
 from utils.jwt_token_utils import PrivateKeyAuthentication
 from utils.upload_to_cloudinary import convert_image_to_text, upload_image
-from .serializers import ConverterSerializer, ImageUploadSerializer
+from .serializers import ImageUploadSerializer
 from utils.format_errors import validation_error
-from utils.check_access_utils import check_access
+from utils.check_access_utils import check_access, user_package_plan_status
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 
@@ -17,6 +17,7 @@ from rest_framework.permissions import IsAuthenticated
     
 class ConverterView(APIView):
     parser_classes = (MultiPartParser, FormParser)
+    serializer_class = ImageUploadSerializer
     
     def post(self, request, *args, **kwargs):
         serializer = ImageUploadSerializer(data=request.data)
@@ -118,6 +119,9 @@ class ConverterView(APIView):
             response_data = {
                 'status': 'FAILED',
                 'message': 'An error occurred while processing the image',
+                'errors': {
+                    "server_error": str(e)
+                }
             }
             return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -125,12 +129,88 @@ class ConvertUsingRemoteAPIView(generics.GenericAPIView):
     authentication_classes = [PrivateKeyAuthentication]
     permission_classes = [IsAuthenticated]
     
-    serializer_class = ConverterSerializer
+    parser_classes = (MultiPartParser, FormParser)
+    serializer_class = ImageUploadSerializer
     def post(self, request, *args, **kwargs):
+        serializer = ImageUploadSerializer(data=request.data)
+               
+        if not serializer.is_valid():
+            response_data = {
+                'status': 'FAILED',
+                'message': 'Validation failed',
+                'errors': validation_error(serializer.errors)
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
-        response_data = {
-            'status': 'OK',
-            'message': 'Image processed successfully',
-        }
-        return Response(response_data, status=status.HTTP_200_OK)
+        files = serializer.validated_data.get('images')
+        
+        # get user's package plan
+        user_package = user_package_plan_status(request.user)
 
+        # check if user has a premier feature access
+        if not user_package['status'] or user_package['plan_type'] == PlanType.FREE_PACKAGE:
+            response_data = {
+                'status': 'FAILED',
+                'message': 'You are not allowed to use this feature',
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+            
+        
+        # check if user has reached the limit of their package plan
+        if user_package['status'] == False:
+            response_data = {
+                'status': 'FAILED',
+                'message': 'You have reached the limit of your package plan',
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST) 
+        
+        # check if user has enough package plan to convert all the images
+        remaining_usage = user_package['usage_limit'] - user_package['usage_count']
+        if user_package['plan_type'] != PlanType.UNLIMITED_USAGE and len(files) > remaining_usage:
+            response_data = {
+                'status': 'FAILED',
+                'message': "You don't have enough package plan to convert all the images",
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        
+        # process the images one by one  
+        try:
+            response_data = {
+                'status': 'OK',
+                'message': 'Images processed successfully',
+                'data': []
+            }
+            
+            # process image
+            for file in files:
+                processed_text_content = convert_image_to_text(file)
+                response_data['data'].append({
+                    'text-content': processed_text_content,
+                    'succuss': 'OK',
+                })
+                
+            
+            # update user package usage count
+            if user_package['plan_type'] != PlanType.UNLIMITED_USAGE:
+                user_package["package"].usage_count += len(files)
+                user_package["package"].save()
+                     
+#         #Log user image conversion activity
+#         # data = {
+#         #     "user_id": user.id,
+#         #     "ip_address": request.META.get('REMOTE_ADDR'),
+#         #     "type": "conversion-using-remote-api"
+#         # }
+#         # UserActivities.objects.create(**data)
+
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            print(e)
+            response_data = {
+                'status': 'FAILED',
+                'message': 'An error occurred while processing the image',
+                'errors': {
+                    "server_error": str(e)
+                }
+            }
+            return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

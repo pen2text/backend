@@ -39,7 +39,7 @@ class RemoteAPITokenManagerCreateView(generics.CreateAPIView):
             'id': str(user.id),
             'email': user.email,
         }
-        serializer.validated_data['token'] = generate_jwt_token(payload, 60)
+        serializer.validated_data['token'] = generate_jwt_token(payload, 518400)
         serializer.validated_data['user'] = user
         serializer.save()
         response_data = {
