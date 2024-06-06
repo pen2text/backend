@@ -198,6 +198,16 @@ class PackagePlanFeeCalculateView(generics.GenericAPIView):
                 }
                 return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
             
+            if int(request.data.get('usage_limit')) <= 0:
+                response_data = {
+                    "status": "FAILED",
+                    "message": "Validation failed",
+                    "errors": {
+                        "usage_limit": "conversion count should be great than 0",
+                    }
+                }
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+            
             fee = calculate_package_fee(instance.plan_type, request.data.get('usage_limit'))
             response_data = {
                 "status": "OK",
