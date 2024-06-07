@@ -2,9 +2,6 @@ import pytest
 from rest_framework import status
 from django.urls import reverse
 from unittest.mock import patch
-# from package_manager.models import RemoteAPITokenManagers
-# from package_manager.serializers import RemoteAPITokenManagerSerializer
-# from rest_framework.exceptions import ValidationError
 
 @pytest.fixture
 def create_url():
@@ -14,11 +11,12 @@ def create_url():
 class TestRemoteAPITokenManagerCreateView:
     
     @pytest.fixture(autouse=True)
-    def setup(self, api_client, users, mock_token, remote_api_tokens):
+    def setup(self, api_client, users, mock_token, remote_api_tokens, unlimited_usage_subscription_plans):
         self.api_client = api_client
         self.users = users
         self.mock_token = mock_token
         self.remote_api_tokens = remote_api_tokens
+        self.unlimited_usage_subscription_plans = unlimited_usage_subscription_plans
 
     def test_remote_api_token_manager_create_unauthorized(self, create_url):
         response = self.api_client.post(create_url, {})
@@ -33,7 +31,6 @@ class TestRemoteAPITokenManagerCreateView:
         self.api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
         
         data = {'name': 'New Token'}
-        # with patch('package_manager.views.generate_jwt_token', return_value='newly_generated_token'):
         response = self.api_client.post(create_url, data)
         
         assert response.status_code == status.HTTP_201_CREATED
@@ -42,7 +39,6 @@ class TestRemoteAPITokenManagerCreateView:
         
         assert 'data' in response.data
         assert response.data['data']['name'] == 'New Token'
-        # assert response.data['data']['token'] == 'newly_generated_token'
 
     def test_remote_api_token_manager_create_validation_error(self, create_url):
         user = self.users[1]
@@ -69,3 +65,14 @@ class TestRemoteAPITokenManagerCreateView:
         assert response.data['status'] == 'FAILED'
         assert response.data['message'] == 'API Token Limit Exceeded'
 
+    def test_remote_api_token_manager_create_failed_non_premier(self, create_url):
+        user = self.users[3]
+        token = self.mock_token(user)
+        self.api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
+        
+        data = {'name': 'New Token'}
+        response = self.api_client.post(create_url, data)
+        
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data['status'] == 'FAILED'
+        assert response.data['message'] == 'Buy a premium package to access this feature'

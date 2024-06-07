@@ -9,7 +9,7 @@ from rest_framework.test import APIClient
 from user_management.models import Users
 from rest_framework_simplejwt.tokens import AccessToken
 from utils.jwt_token_utils import generate_jwt_token
-
+from django.utils import timezone
 
 @pytest.fixture
 def api_client():
@@ -52,8 +52,20 @@ def users(db):
     )
     user3.set_password('AliceJohnson123!')
     user3.save()
+    
+    user4 = Users.objects.create(
+        first_name='Sam',
+        last_name='Smith',
+        gender='male',
+        date_of_birth=date(1990, 8, 20),
+        email='sam.smith@example.com',
+        is_verified=True,
+        role='user'
+    )
+    user4.set_password('JohnSmith123!')
+    user4.save()
 
-    return [user1, user2, user3]
+    return [user1, user2, user3, user4]
 
 @pytest.fixture
 def mock_token(mocker, users):
@@ -194,9 +206,15 @@ def unlimited_usage_subscription_plans(db, users, package_plans, transactions):
         user=users[0],
         package_plan=package_plans[3],  
         transaction=transactions[0],
-        created_at=datetime.now(),
-        expire_date=datetime.now() + timedelta(days=30)
+        expire_date=timezone.now() + timedelta(days=30)
     )
     
-    return [plan1]
+    plan2 = UnlimitedUsageSubscriptionPlans.objects.create(
+        user=users[1],
+        package_plan=package_plans[3],  
+        transaction=transactions[1],
+        expire_date=timezone.now() + timedelta(days=30)
+    )
+    
+    return [plan1, plan2]
 

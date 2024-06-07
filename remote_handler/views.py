@@ -1,5 +1,7 @@
+from package_manager.models import PlanType
 from rest_framework import status, generics
 from rest_framework.response import Response
+from utils.check_access_utils import user_package_plan_status
 from .models import RemoteAPITokenManagers
 from .serializers import RemoteAPITokenManagerSerializer
 from rest_framework.permissions import IsAuthenticated
@@ -17,6 +19,14 @@ class RemoteAPITokenManagerCreateView(generics.CreateAPIView):
     serializer_class = RemoteAPITokenManagerSerializer
     def post(self, request, *args, **kwargs):
         user = request.user
+        user_package_status = user_package_plan_status(user)
+        if not user_package_status['status'] or user_package_status['plan_type'] == PlanType.FREE_PACKAGE:
+            response_data = {
+                'status': 'FAILED',
+                'message': 'Buy a premium package to access this feature',
+            }
+            return Response(response_data, status=status.HTTP_403_FORBIDDEN)
+        
         token_count = RemoteAPITokenManagers.objects.filter(user=user).count()
         if token_count >= int(API_TOKEN_LIMIT):
             response_data = {
