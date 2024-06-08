@@ -12,6 +12,7 @@ from utils.format_errors import validation_error
 from utils.check_access_utils import check_access, user_package_plan_status
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
+from django.db import transaction
 
 
     
@@ -69,53 +70,55 @@ class ConverterView(APIView):
         
         # process the images one by one  
         try:
-            response_data = {
-                'status': 'OK',
-                'message': 'Images processed successfully',
-                'data': []
-            }
-            
-            # convert the images to text 
-            conversion_histories = []
-            for file in files:
+            with transaction.atomic(): 
 
-                # process image
-                processed_text_content = convert_image_to_text(file)
-                response_data['data'].append({
-                    'text-content': processed_text_content,
-                    'succuss': 'OK',
-                })
+                response_data = {
+                    'status': 'OK',
+                    'message': 'Images processed successfully',
+                    'data': []
+                }
                 
-                if is_premier_user:
-                    processed_image_url = upload_image(file)
-                    
-                    # Create ConversionHistories instance
-                    conversion_history = ConversionHistories(
-                        user= request.user,
-                        text_content= processed_text_content,
-                        image_url= processed_image_url
-                    )
-                    conversion_histories.append(conversion_history)
-                    
-            if is_premier_user:
-                ConversionHistories.objects.bulk_create(conversion_histories)
-            
-            # update user package usage count
-            if user_package['plan_type'] != PlanType.UNLIMITED_USAGE:
-                user_package["package"].usage_count += len(files)
-                user_package["package"].save()
-                     
-#         #Log user image conversion activity
-#         # data = {
-#         #     "user_id": user.id,
-#         #     "ip_address": request.META.get('REMOTE_ADDR'),
-#         #     "type": "user_conversion"
-#         # }
-#         # UserActivities.objects.create(**data)
+                for file in files:
 
-            return Response(response_data, status=status.HTTP_200_OK)
+                    # process image using model and get text content
+                    processed_text_content = convert_image_to_text(file)
+                    result = {
+                        'text-content': processed_text_content,
+                        'success': 'OK',
+                    }
+                    
+                    if is_premier_user:
+                        processed_image_url = upload_image(file)
+                        
+                        # Create ConversionHistories instance
+                        conversion_history = ConversionHistories.objects.create(
+                            user= request.user,
+                            text_content= processed_text_content,
+                            image_url= processed_image_url
+                        )
+                        result['image_url'] = processed_image_url
+                        result['conversion_id'] = conversion_history.id
+                    
+                    response_data['data'].append(result)  
+                
+                # update user package usage count
+                if user_package['plan_type'] != PlanType.UNLIMITED_USAGE:
+                    user_package["package"].usage_count += len(files)
+                    user_package["package"].save()
+                        
+    #         #Log user image conversion activity
+    #         # data = {
+    #         #     "user_id": user.id,
+    #         #     "ip_address": request.META.get('REMOTE_ADDR'),
+    #         #     "type": "user_conversion"
+    #         # }
+    #         # UserActivities.objects.create(**data)
+
+                return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             print(e)
+            transaction.set_rollback(True)
+
             response_data = {
                 'status': 'FAILED',
                 'message': 'An error occurred while processing the image',
