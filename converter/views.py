@@ -18,7 +18,7 @@ from django.db import transaction
     
 class ConverterView(APIView):
     parser_classes = (MultiPartParser, FormParser)
-    serializer_class = ImageUploadSerializer
+    # serializer_class = ImageUploadSerializer
     
     def post(self, request, *args, **kwargs):
         serializer = ImageUploadSerializer(data=request.data)
@@ -133,7 +133,7 @@ class ConvertUsingRemoteAPIView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
     
     parser_classes = (MultiPartParser, FormParser)
-    serializer_class = ImageUploadSerializer
+    # serializer_class = ImageUploadSerializer
     def post(self, request, *args, **kwargs):
         serializer = ImageUploadSerializer(data=request.data)
                
