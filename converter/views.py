@@ -106,13 +106,13 @@ class ConverterView(APIView):
                     user_package["package"].usage_count += len(files)
                     user_package["package"].save()
                         
-    #         #Log user image conversion activity
-    #         # data = {
-    #         #     "user_id": user.id,
-    #         #     "ip_address": request.META.get('REMOTE_ADDR'),
-    #         #     "type": "user_conversion"
-    #         # }
-    #         # UserActivities.objects.create(**data)
+                # Log user image conversion activity
+                data = {
+                    "user": request.user,
+                    "ip_address": request.META.get('REMOTE_ADDR'),
+                    "type": "convert-user"
+                }
+                UserActivities.objects.create(**data)
 
                 return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
@@ -198,13 +198,13 @@ class ConvertUsingRemoteAPIView(generics.GenericAPIView):
                 user_package["package"].usage_count += len(files)
                 user_package["package"].save()
                      
-#         #Log user image conversion activity
-#         # data = {
-#         #     "user_id": user.id,
-#         #     "ip_address": request.META.get('REMOTE_ADDR'),
-#         #     "type": "conversion-using-remote-api"
-#         # }
-#         # UserActivities.objects.create(**data)
+            # Log user image conversion activity
+            data = {
+                "user": request.user,
+                "ip_address": request.META.get('REMOTE_ADDR'),
+                "type": "convert-other-system"
+            }
+            UserActivities.objects.create(**data)
 
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
