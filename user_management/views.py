@@ -51,7 +51,7 @@ class UserRegistrationView(generics.CreateAPIView):
         data = {
             "user_id": user.id,
             "ip_address": request.META.get('REMOTE_ADDR'),
-            "type": "user-register"
+            "activity_type": "user-register"
         }
         UserActivities.objects.create(**data)
         
