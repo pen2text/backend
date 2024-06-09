@@ -168,3 +168,70 @@ class VerifyTokenView(APIView):
             "message": "Token is valid",
         }
         return Response(response_data, status=status.HTTP_200_OK)
+    
+class AdminLoginView(TokenObtainPairView):
+    serializer_class = LoginSerializer
+    
+    def post(self, request, *args, **kwargs):
+        auth = JWTAuthentication()
+        try:
+            user_auth_tuple = auth.authenticate(request)
+        except Exception:
+            user_auth_tuple = None
+
+        if user_auth_tuple is not None:
+            response_data = {
+                "status": "FAILED",
+                "message": "Forbidden: You are already logged in",
+            }
+            return Response(response_data, status=status.HTTP_403_FORBIDDEN)
+        
+        serializer = self.serializer_class(data=request.data)
+        
+        if not serializer.is_valid():
+            response_data = {
+                "status": "FAILED",
+                "message": "Validation error",
+                "errors": validation_error(serializer.errors)
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        email = serializer.validated_data.get('email')
+        password = serializer.validated_data.get('password')
+        
+        user = authenticate(email=email, password=password)
+        
+        if not user or user.role != 'admin':
+            response_data = {
+                "status": "FAILED",
+                "message": "Wrong email or password",
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not user.is_verified:
+            send_verification_email(user)
+            response_data = {
+                "status": "FAILED",
+                "message": "Please verify your email address, email has been sent.",
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        
+        refresh = RefreshToken.for_user(user)
+        refresh['email'] = user.email
+        refresh['role'] = user.role
+        
+        is_premier = is_user_has_active_package(user)
+        
+        user_serializer = UserSerializer(user)
+
+        response_data = {
+            'status': 'OK',
+            'message': 'User logged in successfully.',
+            'data':{
+                'access_token': str(refresh.access_token),
+                'refresh_token': str(refresh),
+                'is_premier': is_premier,
+                **user_serializer.data,
+            }
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
