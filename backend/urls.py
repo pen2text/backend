@@ -27,6 +27,7 @@ urlpatterns = [
     path('api/', include('package_manager.urls')),
     path('api/', include('converter.urls')),
     path('api/', include('admin_config.urls')),
+    path('api/', include('admin_dashboard.urls')),
     path('api/', include('chapa_gateway.urls')),
     path('api/', include('remote_handler.urls')),
     path('api/', include('conversion_management.urls')),
