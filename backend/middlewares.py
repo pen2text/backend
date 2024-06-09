@@ -10,15 +10,12 @@ class ActivityLogMiddleware:
                 
         paths = ['/api/users/register/', 'api/converter/remote-convert', '/api/converter/convert']
         if request.path not in paths:
-            user_id = None
-            if request.user.is_authenticated:
-                user_id = request.user.id
             data = {
-                'user_id': user_id,
+                'user_id': request.user,
                 'ip_address': request.META.get('REMOTE_ADDR'),
-                'type': 'visitor'
+                'type': 'web-visitor'
             }
-            # UserActivities.objects.create(**data)    
+            UserActivities.objects.create(**data)    
         
         return response
 
