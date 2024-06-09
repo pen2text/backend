@@ -107,8 +107,9 @@ class ConverterView(APIView):
                     user_package["package"].save()
                         
                 # Log user image conversion activity
+                user_id = request.user.id if request.user.is_authenticated else None
                 data = {
-                    "user": request.user,
+                    "user_id": user_id,
                     "ip_address": request.META.get('REMOTE_ADDR'),
                     "type": "convert-user"
                 }
@@ -199,8 +200,9 @@ class ConvertUsingRemoteAPIView(generics.GenericAPIView):
                 user_package["package"].save()
                      
             # Log user image conversion activity
+            user_id = request.user.id if request.user.is_authenticated else None
             data = {
-                "user": request.user,
+                "user_id": user_id,
                 "ip_address": request.META.get('REMOTE_ADDR'),
                 "type": "convert-other-system"
             }

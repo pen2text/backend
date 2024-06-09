@@ -10,8 +10,9 @@ class ActivityLogMiddleware:
                 
         paths = ['/api/users/register/', 'api/converter/remote-convert', '/api/converter/convert']
         if request.path not in paths:
+            user_id = request.user.id if request.user.is_authenticated else None
             data = {
-                'user_id': request.user,
+                'user_id': user_id,
                 'ip_address': request.META.get('REMOTE_ADDR'),
                 'type': 'web-visitor'
             }
