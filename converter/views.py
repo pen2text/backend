@@ -111,7 +111,7 @@ class ConverterView(APIView):
                 data = {
                     "user_id": user_id,
                     "ip_address": request.META.get('REMOTE_ADDR'),
-                    "type": "convert-user"
+                    "activity_type": "convert-user"
                 }
                 UserActivities.objects.create(**data)
 
@@ -204,7 +204,7 @@ class ConvertUsingRemoteAPIView(generics.GenericAPIView):
             data = {
                 "user_id": user_id,
                 "ip_address": request.META.get('REMOTE_ADDR'),
-                "type": "convert-other-system"
+                "activity_type": "convert-other-system"
             }
             UserActivities.objects.create(**data)
 

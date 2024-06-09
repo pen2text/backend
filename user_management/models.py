@@ -57,8 +57,8 @@ class UserActivities(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user_id = models.UUIDField(null=True, blank=True)
     ip_address = models.GenericIPAddressField()
-    type = models.CharField(max_length=100, blank=False)
-    timestamp = models.DateTimeField(auto_now_add=True)
+    activity_type = models.CharField(max_length=100, blank=False)
+    created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
         db_table = 'user_activities'

@@ -1,6 +1,8 @@
 from django.db import models
 from django.core.validators import MinValueValidator
 import uuid
+from django.utils import timezone
+
 
 class ChapaStatus(models.TextChoices):
     CREATED = 'created', 'CREATED'
@@ -19,8 +21,10 @@ class ChapaTransactions(models.Model):
     description = models.TextField(default='Payment Description')
 
     status = models.CharField(max_length=50, choices=ChapaStatus.choices, default=ChapaStatus.CREATED)
-    response_dump = models.JSONField(default=dict, blank=True)  # incase the response is valuable in the future
+    response_dump = models.JSONField(default=dict, blank=True)
     checkout_url = models.URLField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
         db_table = 'chapa_transactions'      

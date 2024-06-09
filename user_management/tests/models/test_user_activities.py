@@ -19,16 +19,16 @@ class TestUserActivitiesModel:
         activity = UserActivities.objects.create(
             user_id=create_user.id,
             ip_address='192.168.0.1',
-            type='login'
+            activity_type='login'
         )
         assert activity.user_id == create_user.id
         assert activity.ip_address == '192.168.0.1'
-        assert activity.type == 'login'
+        assert activity.activity_type == 'login'
     
     def test_invalid_ip_address(self):
         with pytest.raises(ValidationError):
             activity = UserActivities(
                 ip_address='invalid_ip',
-                type='login'
+                activity_type='login'
             )
             activity.full_clean()

@@ -14,7 +14,7 @@ class ActivityLogMiddleware:
             data = {
                 'user_id': user_id,
                 'ip_address': request.META.get('REMOTE_ADDR'),
-                'type': 'web-visitor'
+                'activity_type': 'web-visitor'
             }
             UserActivities.objects.create(**data)    
         
