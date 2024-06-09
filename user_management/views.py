@@ -49,7 +49,7 @@ class UserRegistrationView(generics.CreateAPIView):
         
         #Log user registration activity
         data = {
-            "user": user,
+            "user_id": user.id,
             "ip_address": request.META.get('REMOTE_ADDR'),
             "type": "user-register"
         }

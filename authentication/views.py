@@ -21,8 +21,11 @@ class LoginView(TokenObtainPairView):
     
     def post(self, request, *args, **kwargs):
         auth = JWTAuthentication()
-        user_auth_tuple = auth.authenticate(request)
-        
+        try:
+            user_auth_tuple = auth.authenticate(request)
+        except Exception:
+            user_auth_tuple = None
+
         if user_auth_tuple is not None:
             response_data = {
                 "status": "FAILED",
