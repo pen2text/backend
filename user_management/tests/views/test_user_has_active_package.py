@@ -27,7 +27,7 @@ class TestUserHasActivePremierPackageView:
         assert response.data['data']['is_premier'] is True
 
     def test_user_has_no_active_premier_package(self):
-        user = self.users[1]  
+        user = self.users[3]  
         
         token = self.mock_token(user)
         self.api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
