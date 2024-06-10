@@ -61,6 +61,7 @@ jobs:
           name: Run linting
           command: pipenv run flake8
 
+
 workflows:
   version: 2
   test-and-lint:
