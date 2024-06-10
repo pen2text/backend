@@ -25,7 +25,6 @@ pytest-django = "*"
 pytest = "*"
 pytest-cov = "*"
 flake8 = "*"
-exceptiongroup = "*"
 
 [requires]
-python_version = "3.9"
+python_version = "*"
