@@ -1,6 +1,8 @@
 import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.utils import timezone
+
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -58,7 +60,7 @@ class UserActivities(models.Model):
     user_id = models.UUIDField(null=True, blank=True)
     ip_address = models.GenericIPAddressField()
     activity_type = models.CharField(max_length=100, blank=False)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
     
     class Meta:
         db_table = 'user_activities'
