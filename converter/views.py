@@ -7,7 +7,7 @@ from rest_framework import generics
 from user_management.models import UserActivities
 from utils.jwt_token_utils import PrivateKeyAuthentication
 from utils.upload_to_cloudinary import convert_image_to_text, upload_image
-from .serializers import ImageUploadSerializer
+from .serializers import ConvertSerializer, ImageUploadSerializer
 from utils.format_errors import validation_error
 from utils.check_access_utils import check_access, user_package_plan_status
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -18,7 +18,7 @@ from django.db import transaction
     
 class ConverterView(APIView):
     parser_classes = (MultiPartParser, FormParser)
-    # serializer_class = ImageUploadSerializer
+    serializer_class = ConvertSerializer
     
     def post(self, request, *args, **kwargs):
         serializer = ImageUploadSerializer(data=request.data)
@@ -134,7 +134,7 @@ class ConvertUsingRemoteAPIView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
     
     parser_classes = (MultiPartParser, FormParser)
-    # serializer_class = ImageUploadSerializer
+    serializer_class = ConvertSerializer
     def post(self, request, *args, **kwargs):
         serializer = ImageUploadSerializer(data=request.data)
                
