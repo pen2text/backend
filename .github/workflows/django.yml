@@ -31,6 +31,9 @@ jobs:
         python --version
         pip list
         printenv
+    - name: Install Django
+      run: |
+        pipenv install django
     - name: Run Tests
       run: |
         pipenv run pytest
