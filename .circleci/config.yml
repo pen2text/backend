@@ -1,3 +1,78 @@
+# version: 2.1
+
+# jobs:
+#   setup:
+#     machine:
+#       image: ubuntu-2004:202101-01
+#     steps:
+#       - checkout
+#       - run:
+#           name: Install system dependencies
+#           command: |
+#             sudo apt-get update
+#             sudo apt-get install -y python3-pip python3-dev
+#       - run:
+#           name: Install pipenv
+#           command: pip3 install pipenv
+#       - run:
+#           name: Install project dependencies
+#           command: pipenv install --dev
+
+#   test:
+#     machine:
+#       image: ubuntu-2004:202101-01
+#     environment:
+#       DJANGO_SETTINGS_MODULE: "backend.settings"
+#       CI: "true"
+#     steps:
+#       - checkout
+#       - run:
+#           name: Install system dependencies
+#           command: |
+#             sudo apt-get update
+#             sudo apt-get install -y python3-pip python3-dev
+#       - run:
+#           name: Install pipenv
+#           command: pip3 install pipenv
+#       - run:
+#           name: Install project dependencies
+#           command: pipenv install --dev
+#       - run:
+#           name: Run tests
+#           command: pipenv run pytest
+
+#   lint:
+#     machine:
+#       image: ubuntu-2004:202101-01
+#     steps:
+#       - checkout
+#       - run:
+#           name: Install system dependencies
+#           command: |
+#             sudo apt-get update
+#             sudo apt-get install -y python3-pip python3-dev
+#       - run:
+#           name: Install pipenv
+#           command: pip3 install pipenv
+#       - run:
+#           name: Install project dependencies
+#           command: pipenv install --dev
+#       - run:
+#           name: Run linting
+#           command: pipenv run flake8
+
+# workflows:
+#   version: 2
+#   test-and-lint:
+#     jobs:
+#       - setup
+#       - test:
+#           requires:
+#             - setup
+#       - lint:
+#           requires:
+#             - setup
+
 version: 2.1
 
 jobs:
@@ -7,16 +82,20 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install system dependencies
+          name: Install Python 3.9
           command: |
             sudo apt-get update
-            sudo apt-get install -y python3-pip python3-dev
+            sudo apt-get install -y python3.9 python3.9-venv python3.9-dev
+            sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
       - run:
           name: Install pipenv
           command: pip3 install pipenv
       - run:
           name: Install project dependencies
           command: pipenv install --dev
+      - run:
+          name: Check installed packages
+          command: pipenv run pip freeze
 
   test:
     machine:
@@ -26,11 +105,15 @@ jobs:
       CI: "true"
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - venv-{{ checksum "Pipfile.lock" }}
       - run:
-          name: Install system dependencies
+          name: Install Python 3.9
           command: |
             sudo apt-get update
-            sudo apt-get install -y python3-pip python3-dev
+            sudo apt-get install -y python3.9 python3.9-venv python3.9-dev
+            sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
       - run:
           name: Install pipenv
           command: pip3 install pipenv
@@ -38,19 +121,39 @@ jobs:
           name: Install project dependencies
           command: pipenv install --dev
       - run:
+          name: Verify Environment Variables
+          command: env
+      - run:
+          name: Check installed packages
+          command: pipenv run pip freeze
+      - run:
+          name: Check Django Installation
+          command: pipenv run python -m django --version
+      - run:
+          name: Check Django Settings
+          command: pipenv run python -c "import django; from django.conf import settings; print(settings.DATABASES)"
+      - run:
           name: Run tests
           command: pipenv run pytest
+      - save_cache:
+          paths:
+            - /home/circleci/.local/share/virtualenvs
+          key: venv-{{ checksum "Pipfile.lock" }}
 
   lint:
     machine:
       image: ubuntu-2004:202101-01
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - venv-{{ checksum "Pipfile.lock" }}
       - run:
-          name: Install system dependencies
+          name: Install Python 3.9
           command: |
             sudo apt-get update
-            sudo apt-get install -y python3-pip python3-dev
+            sudo apt-get install -y python3.9 python3.9-venv python3.9-dev
+            sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
       - run:
           name: Install pipenv
           command: pip3 install pipenv
@@ -60,6 +163,10 @@ jobs:
       - run:
           name: Run linting
           command: pipenv run flake8
+      - save_cache:
+          paths:
+            - /home/circleci/.local/share/virtualenvs
+          key: venv-{{ checksum "Pipfile.lock" }}
 
 workflows:
   version: 2
