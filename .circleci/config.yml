@@ -44,6 +44,49 @@ jobs:
   lint:
     machine:
       image: ubuntu-2004:202101-01
+  setup:
+    machine:
+      image: ubuntu-2004:202101-01
+    steps:
+      - checkout
+      - run:
+          name: Install system dependencies
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y python3-pip python3-dev
+      - run:
+          name: Install pipenv
+          command: pip3 install pipenv
+      - run:
+          name: Install project dependencies
+          command: pipenv install --dev
+
+  test:
+    machine:
+      image: ubuntu-2004:202101-01
+    environment:
+      DJANGO_SETTINGS_MODULE: "backend.settings"
+      CI: "true"
+    steps:
+      - checkout
+      - run:
+          name: Install system dependencies
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y python3-pip python3-dev
+      - run:
+          name: Install pipenv
+          command: pip3 install pipenv
+      - run:
+          name: Install project dependencies
+          command: pipenv install --dev
+      - run:
+          name: Run tests
+          command: pipenv run pytest
+
+  lint:
+    machine:
+      image: ubuntu-2004:202101-01
     steps:
       - checkout
       - run:
@@ -64,7 +107,17 @@ jobs:
 workflows:
   version: 2
   test-and-lint:
+  version: 2
+  test-and-lint:
     jobs:
+      - setup
+      - test:
+          requires:
+            - setup
+      - lint:
+          requires:
+            - setup
+
       - setup
       - test:
           requires:
