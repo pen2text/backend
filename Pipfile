@@ -18,11 +18,12 @@ whitenoise = "*"
 pillow = "*"
 cloudinary = "*"
 requests = "*"
+pytest-django = "*"
+
 
 
 [dev-packages]
 pytest-mock = "*"
-pytest-django = "*"
 pytest = "*"
 pytest-cov = "*"
 flake8 = "*"
