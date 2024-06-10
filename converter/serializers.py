@@ -19,4 +19,6 @@ class ImageUploadSerializer(serializers.Serializer):
                 raise serializers.ValidationError("File is not an image file")
         
         return images
-    
+
+class ConvertSerializer(serializers.Serializer):
+    pass 
