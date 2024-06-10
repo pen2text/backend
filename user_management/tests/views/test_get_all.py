@@ -16,7 +16,7 @@ class TestUserListView:
         assert response.status_code == status.HTTP_200_OK
         assert response.data['status'] == 'OK'
         assert response.data['message'] == 'Users retrieved successfully'
-        assert len(response.data['data']) == 3  # Assuming three users are created in the fixture
+        assert len(response.data['data']) == len(users)
 
     def test_user_forbidden_to_retrieve_users_list(self, api_client, mock_token, users):
         user = users[1]  # Regular user
