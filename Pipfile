@@ -18,12 +18,14 @@ whitenoise = "*"
 pillow = "*"
 cloudinary = "*"
 requests = "*"
-pytest-mock = "*"
 pytest-django = "*"
-pytest = "*"
-pytest-cov = "*"
 
 [dev-packages]
+pytest-mock = "*"
+pytest = "*"
+pytest-cov = "*"
+flake8 = "*"
+exceptiongroup = "*"
 
 [requires]
-python_version = "3.11"
+python_version = "*"
