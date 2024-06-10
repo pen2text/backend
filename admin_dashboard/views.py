@@ -2,7 +2,7 @@ from datetime import timedelta
 from django.utils import timezone
 from django.db.models import Count, Sum, Q, F
 from chapa_gateway.models import ChapaStatus, ChapaTransactions
-from package_manager.models import LimitedUsageSubscriptionPlans, PlanType, UnlimitedUsageSubscriptionPlans, UserAccessRecords
+from package_manager.models import LimitedUsageSubscriptionPlans, PackagePlanDetails, PlanType, UnlimitedUsageSubscriptionPlans, UserAccessRecords
 from user_management.models import UserActivities, Users
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -261,5 +261,34 @@ class DashboardDataView(APIView):
         
         return Response(response_data, status=status.HTTP_200_OK)
         
-               
+class PaginatedPackagePlanDetailsListView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        current_user = request.user
+        if current_user.role != 'admin':
+            response_data = {
+                'status': 'FAILED',
+                'message': 'You are not authorized to view users',
+            }
+            return Response(response_data, status=status.HTTP_403_FORBIDDEN)
+        
+        page_size = int(request.query_params.get('page_size', 10))
+        page_number = int(request.query_params.get('page', 1))
+        
+        start_index = max(page_number - 1, 0) * page_size
+        packages = PackagePlanDetails.objects.all()
+        
+        paginated_users = packages[start_index:start_index + page_size]
+        serializer = UserSerializer(paginated_users, many=True)
+        response_data = {
+            'status': 'OK',
+            'message': 'Packages retrieved successfully',
+            'data': serializer.data,
+            'total_count': packages.count(),
+            'page_size': page_size,
+            'page_number': page_number,
+        }
+        return Response(response_data, status=status.HTTP_200_OK)  
         
