@@ -31,6 +31,10 @@ jobs:
     - name: Install Django
       run: |
         pipenv install django
+        
+    - name: Activate virtual environment
+      run: pipenv shell
+      
     - name: Run Tests
       run: |
         pipenv run pytest
