@@ -217,3 +217,20 @@ class PackagePlanFeeCalculateView(generics.GenericAPIView):
                 },
             }
             return Response(response_data, status=status.HTTP_200_OK)
+
+class PackagePlanDetailListForsubscriptionView(generics.ListAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = PackagePlanDetails.objects.all()
+    serializer_class = PackagePlanDetailSerializer
+
+    def list(self, request, *args, **kwargs):
+        free = [PlanType.FREE_PACKAGE, PlanType.FREE_UNREGISTERED_PACKAGE, PlanType.PREMIER_TRIAL_PACKAGE]
+        queryset = self.get_queryset().exclude(plan_type__in=free)
+        serializer = self.get_serializer(queryset, many=True)
+        response_data = {
+            "status": "OK",
+            "message": "Plans fetched successfully",
+            "data": serializer.data,
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
