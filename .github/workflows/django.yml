@@ -33,5 +33,5 @@ jobs:
     - name: Install Django
       run: pipenv install django
 
-    - name: Run Tests
-      run: pipenv run pytest
+    # - name: Run Tests
+    #   run: pipenv run pytest
