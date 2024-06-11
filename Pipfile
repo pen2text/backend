@@ -18,7 +18,6 @@ whitenoise = "*"
 pillow = "*"
 cloudinary = "*"
 requests = "*"
-pytest-django = "*"
 
 [dev-packages]
 pytest-mock = "*"
@@ -26,6 +25,7 @@ pytest = "*"
 pytest-cov = "*"
 flake8 = "*"
 exceptiongroup = "*"
+pytest-django = "*"
 
 [requires]
 python_version = "*"
